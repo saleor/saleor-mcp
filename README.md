@@ -1,0 +1,1 @@
+A Model Context Protocol (MCP) server for Saleor Commerce.
