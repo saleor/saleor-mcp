@@ -943,7 +943,7 @@ wheels = [
 [[package]]
 name = "saleor-mcp"
 version = "0.1.0"
-source = { editable = "." }
+source = { virtual = "." }
 dependencies = [
     { name = "fastmcp" },
     { name = "httpx" },
