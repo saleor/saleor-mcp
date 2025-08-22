@@ -8,9 +8,3 @@ class SaleorRequest(BaseModel):
     authentication_token: str = Field(
         description="Valid authentication token for the Saleor GraphQL API"
     )
-
-
-class MCPErrorResponse(BaseModel):
-    success: bool = False
-    error: str
-    message: str

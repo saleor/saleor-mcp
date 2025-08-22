@@ -3,10 +3,8 @@ from typing import Any
 from fastmcp import FastMCP
 from pydantic import Field
 
-# from saleor_mcp.core.models import SaleorRequest
-# from saleor_mcp.core.request import saleor_api_request
 from .core.models import SaleorRequest
-from .core.request import saleor_api_request
+from .core.request import make_saleor_request
 
 orders_router = FastMCP("Orders MCP")
 
@@ -60,17 +58,17 @@ async def orders(request: OrdersRequest) -> dict[str, Any]:
     product details, payment information, shipping details, and order totals.
     """
 
-    data, error_response = await saleor_api_request(
+    data, error = await make_saleor_request(
         query=ORDERS_LIST_QUERY,
         variables={"first": request.first, "after": request.after},
         authentication_token=request.authentication_token,
         saleor_api_url=request.saleor_api_url,
     )
 
-    if error_response:
-        return error_response
+    if error:
+        return error
 
-    orders_data = data.get("data", {}).get("orders", {})
+    orders_data = data.get("orders", {})
 
     return {
         "success": True,
@@ -78,12 +76,5 @@ async def orders(request: OrdersRequest) -> dict[str, Any]:
             "orders": orders_data.get("edges", []),
             "pageInfo": orders_data.get("pageInfo", {}),
             "totalFetched": len(orders_data.get("edges", [])),
-            "hasNextPage": orders_data.get("pageInfo", {}).get(
-                "hasNextPage", False
-            ),
-            "endCursor": orders_data.get("pageInfo", {}).get("endCursor"),
         },
-        "message": (
-            f"Successfully fetched {len(orders_data.get('edges', []))} orders"
-        ),
     }

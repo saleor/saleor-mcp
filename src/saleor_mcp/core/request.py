@@ -1,14 +1,11 @@
 import httpx
 
-# from saleor_mcp.core.models import MCPErrorResponse
-from ..core.models import MCPErrorResponse
-
 REQUEST_TIMEOUT = 30.0
 
 
-async def saleor_api_request(
+async def make_saleor_request(
     query: str, variables: dict, authentication_token: str, saleor_api_url: str
-) -> tuple[dict | None, MCPErrorResponse | None]:
+) -> tuple[dict | None, dict | None]:
     """Make a GraphQL request to the Saleor API.
 
     Args:
@@ -18,7 +15,7 @@ async def saleor_api_request(
         saleor_api_url (str): The URL of the Saleor GraphQL API.
 
     Returns:
-        dict: The response data from the Saleor API.
+        tuple[dict | None, MCPErrorResponse | None]: The response data and any error information.
 
     """
 
@@ -41,30 +38,27 @@ async def saleor_api_request(
             data = response.json()
 
             if "errors" in data:
-                error = data["errors"][0].get("message", "Unknown error")
-                return data, MCPErrorResponse(
-                    success=False,
-                    error=error,
-                    message=error,
-                )
+                error = data["errors"][0]
+                message = error.get("message", "Unknown error")
+                code = error.get("extensions", {}).get("exception", {}).get("code")
+                return None, {"code": code, "message": message, "success": False}
 
+            data = data.get("data", {})
             return data, None
 
     except httpx.HTTPStatusError as e:
-        return None, MCPErrorResponse(
-            success=False,
-            error=f"HTTP error {e.response.status_code}: {e.response.text}",
-            message="Failed to connect to Saleor",
-        )
-    except httpx.RequestError as e:
-        return None, MCPErrorResponse(
-            success=False,
-            error=f"Request error: {str(e)}",
-            message="Network error while connecting to Saleor",
-        )
+        return None, {
+            "code": str(e.response.status_code),
+            "message": f"HTTP error {e.response.status_code}: {e.response.text}",
+            "success": False,
+        }
+    except httpx.RequestError:
+        return None, {
+            "message": "Network error while connecting to Saleor",
+            "success": False,
+        }
     except Exception as e:
-        return None, MCPErrorResponse(
-            success=False,
-            error=f"Unexpected error: {str(e)}",
-            message="An unexpected error occurred while fetching orders",
-        )
+        return None, {
+            "message": f"An unexpected error occurred while making request to Saleor: {str(e)}",
+            "success": False,
+        }
