@@ -1,6 +1,7 @@
 import httpx
 
-from .models import MCPErrorResponse
+# from saleor_mcp.core.models import MCPErrorResponse
+from ..core.models import MCPErrorResponse
 
 REQUEST_TIMEOUT = 30.0
 

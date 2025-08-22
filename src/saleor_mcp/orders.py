@@ -3,6 +3,8 @@ from typing import Any
 from fastmcp import FastMCP
 from pydantic import Field
 
+# from saleor_mcp.core.models import SaleorRequest
+# from saleor_mcp.core.request import saleor_api_request
 from .core.models import SaleorRequest
 from .core.request import saleor_api_request
 
