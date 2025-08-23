@@ -1,6 +1,6 @@
 from fastmcp import FastMCP
 
-from saleor_mcp.orders import orders_router
+from saleor_mcp.tools import orders_router
 
 mcp = FastMCP("Saleor MCP Server")
 mcp.mount(orders_router)

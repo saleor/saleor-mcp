@@ -3,8 +3,8 @@ from typing import Any
 from fastmcp import FastMCP
 from pydantic import Field
 
-from .core.models import SaleorRequest
-from .core.request import SaleorRequestError, make_saleor_request
+from ..models import SaleorRequest
+from ..saleor_client import SaleorRequestError, make_saleor_request
 
 orders_router = FastMCP("Orders MCP")
 
