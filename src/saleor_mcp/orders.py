@@ -4,7 +4,7 @@ from fastmcp import FastMCP
 from pydantic import Field
 
 from .core.models import SaleorRequest
-from .core.request import make_saleor_request
+from .core.request import SaleorRequestError, make_saleor_request
 
 orders_router = FastMCP("Orders MCP")
 
@@ -58,18 +58,23 @@ async def orders(request: OrdersRequest) -> dict[str, Any]:
     product details, payment information, shipping details, and order totals.
     """
 
-    data, error = await make_saleor_request(
-        query=ORDERS_LIST_QUERY,
-        variables={"first": request.first, "after": request.after},
-        authentication_token=request.authentication_token,
-        saleor_api_url=request.saleor_api_url,
-    )
-
-    if error:
-        return error
+    data = {}
+    try:
+        data = await make_saleor_request(
+            query=ORDERS_LIST_QUERY,
+            variables={"first": request.first, "after": request.after},
+            authentication_token=request.authentication_token,
+            saleor_api_url=request.saleor_api_url,
+        )
+    except SaleorRequestError as e:
+        return {
+            "success": False,
+            "error": e.message,
+            "code": e.code,
+            "data": {},
+        }
 
     orders_data = data.get("orders", {})
-
     return {
         "success": True,
         "data": {

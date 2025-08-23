@@ -3,9 +3,17 @@ import httpx
 REQUEST_TIMEOUT = 30.0
 
 
+class SaleorRequestError(Exception):
+
+    def __init__(self, message: str, code: str | None = None) -> None:
+        super().__init__(message)
+        self.message = message
+        self.code = code
+
+
 async def make_saleor_request(
     query: str, variables: dict, authentication_token: str, saleor_api_url: str
-) -> tuple[dict | None, dict | None]:
+) -> dict:
     """Make a GraphQL request to the Saleor API.
 
     Args:
@@ -15,7 +23,11 @@ async def make_saleor_request(
         saleor_api_url (str): The URL of the Saleor GraphQL API.
 
     Returns:
-        tuple[dict | None, MCPErrorResponse | None]: The response data and any error information.
+        dict: The response data.
+
+    Raises:
+        SaleorRequestError: If an error occurs while making the request, including
+        network issues, HTTP errors, or GraphQL errors.
 
     """
 
@@ -24,6 +36,8 @@ async def make_saleor_request(
         "Content-Type": "application/json",
         "Authorization": f"Bearer {authentication_token}",
     }
+
+    data = {}
 
     try:
         async with httpx.AsyncClient() as client:
@@ -41,24 +55,20 @@ async def make_saleor_request(
                 error = data["errors"][0]
                 message = error.get("message", "Unknown error")
                 code = error.get("extensions", {}).get("exception", {}).get("code")
-                return None, {"code": code, "message": message, "success": False}
-
-            data = data.get("data", {})
-            return data, None
+                raise SaleorRequestError(message=message, code=code)
 
     except httpx.HTTPStatusError as e:
-        return None, {
-            "code": str(e.response.status_code),
-            "message": f"HTTP error {e.response.status_code}: {e.response.text}",
-            "success": False,
-        }
-    except httpx.RequestError:
-        return None, {
-            "message": "Network error while connecting to Saleor",
-            "success": False,
-        }
+        raise SaleorRequestError(
+            message=f"HTTP error {e.response.status_code}: {e.response.text}",
+            code=str(e.response.status_code),
+        ) from e
+    except httpx.RequestError as e:
+        raise SaleorRequestError(
+            message="Network error while connecting to Saleor",
+        ) from e
     except Exception as e:
-        return None, {
-            "message": f"An unexpected error occurred while making request to Saleor: {str(e)}",
-            "success": False,
-        }
+        raise SaleorRequestError(
+            message=f"An unexpected error occurred while making request to Saleor: {str(e)}",
+        ) from e
+
+    return data.get("data", {})
