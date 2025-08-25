@@ -4,7 +4,6 @@ REQUEST_TIMEOUT = 30.0
 
 
 class SaleorRequestError(Exception):
-
     def __init__(self, message: str, code: str | None = None) -> None:
         super().__init__(message)
         self.message = message
@@ -47,16 +46,8 @@ async def make_saleor_request(
                 headers=headers,
                 timeout=REQUEST_TIMEOUT,
             )
-
-            response.raise_for_status()
-            data = response.json()
-
-            if "errors" in data:
-                error = data["errors"][0]
-                message = error.get("message", "Unknown error")
-                code = error.get("extensions", {}).get("exception", {}).get("code")
-                raise SaleorRequestError(message=message, code=code)
-
+        response.raise_for_status()
+        data = response.json()
     except httpx.HTTPStatusError as e:
         raise SaleorRequestError(
             message=f"HTTP error {e.response.status_code}: {e.response.text}",
@@ -70,5 +61,11 @@ async def make_saleor_request(
         raise SaleorRequestError(
             message=f"An unexpected error occurred while making request to Saleor: {str(e)}",
         ) from e
+
+    if "errors" in data:
+        error = data["errors"][0]
+        message = error.get("message", "Unknown error")
+        code = error.get("extensions", {}).get("exception", {}).get("code")
+        raise SaleorRequestError(message=message, code=code)
 
     return data.get("data", {})

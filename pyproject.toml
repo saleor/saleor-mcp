@@ -18,10 +18,13 @@ build-backend = "uv_build"
 [project.scripts]
 saleor-mcp = "saleor_mcp.main:main"
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
     "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "httpx>=0.25.0",
     "ruff>=0.1.0",
+    "pytest-socket>=0.7.0",
 ]
 
 [tool.ruff]
@@ -79,3 +82,11 @@ line-length = 88
   [tool.ruff.lint.flake8-pytest-style]
   fixture-parentheses = false
   mark-parentheses = false
+
+[tool.pytest.ini_options]
+minversion = "7.4.0"
+python_files = "test_*.py"
+addopts = [
+    "--disable-socket",
+    "--allow-unix-socket",
+]
