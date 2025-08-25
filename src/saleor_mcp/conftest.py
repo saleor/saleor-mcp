@@ -1,8 +1,13 @@
 from contextlib import asynccontextmanager
 
 import pytest
+from dotenv import load_dotenv
 
 from saleor_mcp.settings import settings
+
+# Load test settings
+load_dotenv(".test.env", override=True)
+settings.__init__()
 
 
 @asynccontextmanager

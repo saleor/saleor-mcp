@@ -3,7 +3,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import httpx
 import pytest
 
-from saleor_mcp.conftest import settings_override
 from saleor_mcp.saleor_client import SaleorRequestError, make_saleor_request
 
 
@@ -39,10 +38,6 @@ def test_error_with_message_and_code():
     assert error.code == "ERROR_CODE"
 
 
-@settings_override(
-    SALEOR_AUTH_TOKEN="test-token",
-    SALEOR_API_URL="https://example.saleor.cloud/graphql/",
-)
 @pytest.mark.asyncio
 async def test_successful_request():
     response_data = {
