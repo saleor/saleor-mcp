@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import httpx
 import pytest
 
+from saleor_mcp.conftest import settings_override
 from saleor_mcp.saleor_client import SaleorRequestError, make_saleor_request
 
 
@@ -38,6 +39,10 @@ def test_error_with_message_and_code():
     assert error.code == "ERROR_CODE"
 
 
+@settings_override(
+    SALEOR_AUTH_TOKEN="test-token",
+    SALEOR_API_URL="https://example.saleor.cloud/graphql/",
+)
 @pytest.mark.asyncio
 async def test_successful_request():
     response_data = {
@@ -54,8 +59,6 @@ async def test_successful_request():
         result = await make_saleor_request(
             query="query { orders { edges { node { id } } } }",
             variables={"first": 10},
-            authentication_token="test-token",
-            saleor_api_url="https://example.saleor.cloud/graphql/",
         )
 
         expected_data = response_data["data"]
@@ -93,8 +96,6 @@ async def test_graphql_errors_in_response():
             await make_saleor_request(
                 query="query { orders { edges { node { id } } } }",
                 variables={},
-                authentication_token="invalid-token",
-                saleor_api_url="https://example.saleor.cloud/graphql/",
             )
 
         assert exc_info.value.message == "Invalid token"
@@ -111,8 +112,6 @@ async def test_graphql_error_without_code():
             await make_saleor_request(
                 query="query { orders { edges { node { id } } } }",
                 variables={},
-                authentication_token="test-token",
-                saleor_api_url="https://example.saleor.cloud/graphql/",
             )
 
         assert exc_info.value.message == "Some error without code"
@@ -134,8 +133,6 @@ async def test_http_status_error():
             await make_saleor_request(
                 query="query { orders { edges { node { id } } } }",
                 variables={},
-                authentication_token="test-token",
-                saleor_api_url="https://invalid.url/graphql/",
             )
 
         assert "HTTP error 404: Not Found" in exc_info.value.message
@@ -153,8 +150,6 @@ async def test_request_error():
             await make_saleor_request(
                 query="query { orders { edges { node { id } } } }",
                 variables={},
-                authentication_token="test-token",
-                saleor_api_url="https://unreachable.url/graphql/",
             )
 
         assert exc_info.value.message == "Network error while connecting to Saleor"
@@ -170,8 +165,6 @@ async def test_unexpected_error():
             await make_saleor_request(
                 query="query { orders { edges { node { id } } } }",
                 variables={},
-                authentication_token="test-token",
-                saleor_api_url="https://example.saleor.cloud/graphql/",
             )
 
         expected_message = "An unexpected error occurred while making request to Saleor: Unexpected error"
@@ -188,8 +181,6 @@ async def test_successful_request_with_empty_data():
         result = await make_saleor_request(
             query="query { orders { edges { node { id } } } }",
             variables={},
-            authentication_token="test-token",
-            saleor_api_url="https://example.saleor.cloud/graphql/",
         )
 
         assert result == {}
@@ -204,8 +195,6 @@ async def test_successful_request_without_data_field():
         result = await make_saleor_request(
             query="query { orders { edges { node { id } } } }",
             variables={},
-            authentication_token="test-token",
-            saleor_api_url="https://example.saleor.cloud/graphql/",
         )
 
         assert result == {}

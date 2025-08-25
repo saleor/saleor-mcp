@@ -1,4 +1,18 @@
+from contextlib import asynccontextmanager
+
 import pytest
+
+from saleor_mcp.settings import settings
+
+
+@asynccontextmanager
+async def settings_override(**kwargs):
+    original_settings = settings.model_dump()
+    for key, value in kwargs.items():
+        setattr(settings, key, value)
+    yield
+    for key, value in original_settings.items():
+        setattr(settings, key, value)
 
 
 @pytest.fixture

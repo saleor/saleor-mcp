@@ -1,5 +1,7 @@
 import httpx
 
+from saleor_mcp.settings import settings
+
 REQUEST_TIMEOUT = 30.0
 
 
@@ -10,16 +12,12 @@ class SaleorRequestError(Exception):
         self.code = code
 
 
-async def make_saleor_request(
-    query: str, variables: dict, authentication_token: str, saleor_api_url: str
-) -> dict:
+async def make_saleor_request(query: str, variables: dict) -> dict:
     """Make a GraphQL request to the Saleor API.
 
     Args:
         query (str): The GraphQL query string.
         variables (dict): Variables for the GraphQL query.
-        authentication_token (str): Bearer token for authentication.
-        saleor_api_url (str): The URL of the Saleor GraphQL API.
 
     Returns:
         dict: The response data.
@@ -33,7 +31,7 @@ async def make_saleor_request(
     payload = {"query": query, "variables": variables}
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {authentication_token}",
+        "Authorization": f"Bearer {settings.SALEOR_AUTH_TOKEN}",
     }
 
     data = {}
@@ -41,7 +39,7 @@ async def make_saleor_request(
     try:
         async with httpx.AsyncClient() as client:
             response = await client.post(
-                saleor_api_url,
+                settings.SALEOR_API_URL,
                 json=payload,
                 headers=headers,
                 timeout=REQUEST_TIMEOUT,

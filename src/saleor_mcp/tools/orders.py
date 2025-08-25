@@ -1,9 +1,7 @@
-from typing import Any
+from typing import Annotated, Any
 
 from fastmcp import FastMCP
-from pydantic import Field
 
-from ..models import SaleorRequest
 from ..saleor_client import SaleorRequestError, make_saleor_request
 
 orders_router = FastMCP("Orders MCP")
@@ -38,20 +36,15 @@ query GetOrders($first: Int, $after: String) {
 """
 
 
-class OrdersRequest(SaleorRequest):
-    """Request model for the orders tool."""
-
-    first: int | None = Field(
-        default=100, description="Number of orders to fetch (max 100 per request)"
-    )
-    after: str | None = Field(
-        default=None,
-        description="Cursor for pagination - fetch orders after this cursor",
-    )
-
-
 @orders_router.tool()
-async def orders(request: OrdersRequest) -> dict[str, Any]:
+async def orders(
+    first: Annotated[
+        int | None, "Number of orders to fetch (max 100 per request)"
+    ] = 100,
+    after: Annotated[
+        str | None, "Cursor for pagination - fetch orders after this cursor"
+    ] = None,
+) -> dict[str, Any]:
     """Fetch comprehensive order data from Saleor GraphQL API.
 
     This tool retrieves detailed order information including customer data,
@@ -62,9 +55,7 @@ async def orders(request: OrdersRequest) -> dict[str, Any]:
     try:
         data = await make_saleor_request(
             query=ORDERS_LIST_QUERY,
-            variables={"first": request.first, "after": request.after},
-            authentication_token=request.authentication_token,
-            saleor_api_url=request.saleor_api_url,
+            variables={"first": first, "after": after},
         )
     except SaleorRequestError as e:
         return {
