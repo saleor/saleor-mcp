@@ -20,11 +20,11 @@ def get_config_from_headers() -> SaleorConfig:
 
     api_url = headers.get("x-saleor-api-url")
     if not api_url:
-        raise ToolError(message="Missing X-Saleor-API-URL header")
+        raise ToolError("Missing X-Saleor-API-URL header")
 
     auth_token = headers.get("x-saleor-auth-token")
     if not auth_token:
-        raise ToolError(message="Missing X-Saleor-Auth-Token header")
+        raise ToolError("Missing X-Saleor-Auth-Token header")
 
     return SaleorConfig(
         api_url=api_url,
