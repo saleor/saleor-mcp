@@ -1,6 +1,5 @@
 import httpx
-
-from saleor_mcp.settings import settings
+from fastmcp.server.dependencies import get_http_headers
 
 REQUEST_TIMEOUT = 30.0
 
@@ -28,10 +27,18 @@ async def make_saleor_request(query: str, variables: dict) -> dict:
 
     """
 
+    headers = get_http_headers()
+    saleor_api_url = headers.get("x-saleor-api-url")
+    if not saleor_api_url:
+        raise SaleorRequestError(message="Missing X-Saleor-API-URL header")
+    saleor_auth_token = headers.get("x-saleor-auth-token")
+    if not saleor_auth_token:
+        raise SaleorRequestError(message="Missing X-Saleor-Auth-Token header")
+
     payload = {"query": query, "variables": variables}
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {settings.SALEOR_AUTH_TOKEN}",
+        "Authorization": f"Bearer {saleor_auth_token}",
     }
 
     data = {}
@@ -39,7 +46,7 @@ async def make_saleor_request(query: str, variables: dict) -> dict:
     try:
         async with httpx.AsyncClient() as client:
             response = await client.post(
-                settings.SALEOR_API_URL,
+                saleor_api_url,
                 json=payload,
                 headers=headers,
                 timeout=REQUEST_TIMEOUT,

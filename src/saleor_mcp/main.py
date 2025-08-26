@@ -4,7 +4,7 @@ from saleor_mcp.tools import orders_router
 
 mcp = FastMCP("Saleor MCP Server")
 mcp.mount(orders_router)
-app = mcp.http_app
+app = mcp.http_app()
 
 
 def main():

@@ -39,7 +39,7 @@ def test_error_with_message_and_code():
 
 
 @pytest.mark.asyncio
-async def test_successful_request():
+async def test_successful_request(mock_http_headers):
     response_data = {
         "data": {
             "orders": {
@@ -50,7 +50,12 @@ async def test_successful_request():
     }
     mock_client = create_mock_http_client(response_data)
 
-    with patch("httpx.AsyncClient", return_value=mock_client.return_value):
+    with (
+        patch("httpx.AsyncClient", return_value=mock_client.return_value),
+        patch(
+            "saleor_mcp.saleor_client.get_http_headers", return_value=mock_http_headers
+        ),
+    ):
         result = await make_saleor_request(
             query="query { orders { edges { node { id } } } }",
             variables={"first": 10},
@@ -75,7 +80,7 @@ async def test_successful_request():
 
 
 @pytest.mark.asyncio
-async def test_graphql_errors_in_response():
+async def test_graphql_errors_in_response(mock_http_headers):
     response_data = {
         "errors": [
             {
@@ -86,7 +91,12 @@ async def test_graphql_errors_in_response():
     }
     mock_client = create_mock_http_client(response_data)
 
-    with patch("httpx.AsyncClient", return_value=mock_client.return_value):
+    with (
+        patch("httpx.AsyncClient", return_value=mock_client.return_value),
+        patch(
+            "saleor_mcp.saleor_client.get_http_headers", return_value=mock_http_headers
+        ),
+    ):
         with pytest.raises(SaleorRequestError) as exc_info:
             await make_saleor_request(
                 query="query { orders { edges { node { id } } } }",
@@ -98,11 +108,16 @@ async def test_graphql_errors_in_response():
 
 
 @pytest.mark.asyncio
-async def test_graphql_error_without_code():
+async def test_graphql_error_without_code(mock_http_headers):
     response_data = {"errors": [{"message": "Some error without code"}]}
     mock_client = create_mock_http_client(response_data=response_data)
 
-    with patch("httpx.AsyncClient", return_value=mock_client.return_value):
+    with (
+        patch("httpx.AsyncClient", return_value=mock_client.return_value),
+        patch(
+            "saleor_mcp.saleor_client.get_http_headers", return_value=mock_http_headers
+        ),
+    ):
         with pytest.raises(SaleorRequestError) as exc_info:
             await make_saleor_request(
                 query="query { orders { edges { node { id } } } }",
@@ -114,7 +129,7 @@ async def test_graphql_error_without_code():
 
 
 @pytest.mark.asyncio
-async def test_http_status_error():
+async def test_http_status_error(mock_http_headers):
     mock_response_obj = MagicMock()
     mock_response_obj.status_code = 404
     mock_response_obj.text = "Not Found"
@@ -123,7 +138,12 @@ async def test_http_status_error():
     )
     mock_client = create_mock_http_client(status_error=status_error)
 
-    with patch("httpx.AsyncClient", return_value=mock_client.return_value):
+    with (
+        patch("httpx.AsyncClient", return_value=mock_client.return_value),
+        patch(
+            "saleor_mcp.saleor_client.get_http_headers", return_value=mock_http_headers
+        ),
+    ):
         with pytest.raises(SaleorRequestError) as exc_info:
             await make_saleor_request(
                 query="query { orders { edges { node { id } } } }",
@@ -135,12 +155,17 @@ async def test_http_status_error():
 
 
 @pytest.mark.asyncio
-async def test_request_error():
+async def test_request_error(mock_http_headers):
     mock_client = create_mock_http_client(
         side_effect=httpx.RequestError("Connection failed")
     )
 
-    with patch("httpx.AsyncClient", return_value=mock_client.return_value):
+    with (
+        patch("httpx.AsyncClient", return_value=mock_client.return_value),
+        patch(
+            "saleor_mcp.saleor_client.get_http_headers", return_value=mock_http_headers
+        ),
+    ):
         with pytest.raises(SaleorRequestError) as exc_info:
             await make_saleor_request(
                 query="query { orders { edges { node { id } } } }",
@@ -152,10 +177,15 @@ async def test_request_error():
 
 
 @pytest.mark.asyncio
-async def test_unexpected_error():
+async def test_unexpected_error(mock_http_headers):
     mock_client = create_mock_http_client(side_effect=Exception("Unexpected error"))
 
-    with patch("httpx.AsyncClient", return_value=mock_client.return_value):
+    with (
+        patch("httpx.AsyncClient", return_value=mock_client.return_value),
+        patch(
+            "saleor_mcp.saleor_client.get_http_headers", return_value=mock_http_headers
+        ),
+    ):
         with pytest.raises(SaleorRequestError) as exc_info:
             await make_saleor_request(
                 query="query { orders { edges { node { id } } } }",
@@ -168,11 +198,16 @@ async def test_unexpected_error():
 
 
 @pytest.mark.asyncio
-async def test_successful_request_with_empty_data():
+async def test_successful_request_with_empty_data(mock_http_headers):
     response_data = {"data": {}}
     mock_client = create_mock_http_client(response_data)
 
-    with patch("httpx.AsyncClient", return_value=mock_client.return_value):
+    with (
+        patch("httpx.AsyncClient", return_value=mock_client.return_value),
+        patch(
+            "saleor_mcp.saleor_client.get_http_headers", return_value=mock_http_headers
+        ),
+    ):
         result = await make_saleor_request(
             query="query { orders { edges { node { id } } } }",
             variables={},
@@ -182,11 +217,16 @@ async def test_successful_request_with_empty_data():
 
 
 @pytest.mark.asyncio
-async def test_successful_request_without_data_field():
+async def test_successful_request_without_data_field(mock_http_headers):
     response_data = {"some_other_field": "value"}
     mock_client = create_mock_http_client(response_data)
 
-    with patch("httpx.AsyncClient", return_value=mock_client.return_value):
+    with (
+        patch("httpx.AsyncClient", return_value=mock_client.return_value),
+        patch(
+            "saleor_mcp.saleor_client.get_http_headers", return_value=mock_http_headers
+        ),
+    ):
         result = await make_saleor_request(
             query="query { orders { edges { node { id } } } }",
             variables={},

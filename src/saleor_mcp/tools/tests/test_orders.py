@@ -7,14 +7,16 @@ from saleor_mcp.tools.orders import orders
 
 
 @pytest.mark.asyncio
-async def test_successful_orders_fetch(sample_orders_response):
-    with patch("saleor_mcp.tools.orders.make_saleor_request") as mock_make_request:
+async def test_successful_orders_fetch(sample_orders_response, context):
+    with (
+        context,
+        patch("saleor_mcp.tools.orders.make_saleor_request") as mock_make_request,
+    ):
         mock_make_request.return_value = sample_orders_response
 
         tool_result = await orders.run({"first": 10, "after": "cursor123"})
         result = tool_result.structured_content
 
-        assert result["success"] is True
         assert len(result["data"]["orders"]) == 1
         assert result["data"]["orders"][0]["node"]["number"] == "001"
         assert result["data"]["pageInfo"]["hasNextPage"] is True
@@ -28,16 +30,19 @@ async def test_successful_orders_fetch(sample_orders_response):
 
 
 @pytest.mark.asyncio
-async def test_orders_fetch_with_saleor_error():
-    with patch("saleor_mcp.tools.orders.make_saleor_request") as mock_make_request:
+async def test_orders_fetch_with_saleor_error(context):
+    with (
+        context,
+        patch("saleor_mcp.tools.orders.make_saleor_request") as mock_make_request,
+        patch("saleor_mcp.tools.orders.Context.error") as mock_ctx_error,
+    ):
         mock_make_request.side_effect = SaleorRequestError(
             "Invalid token", "INVALID_TOKEN"
         )
 
-        tool_result = await orders.run({})
-        result = tool_result.structured_content
+        with pytest.raises(SaleorRequestError) as e:
+            await orders.run({})
 
-        assert result["success"] is False
-        assert result["error"] == "Invalid token"
-        assert result["code"] == "INVALID_TOKEN"
-        assert result["data"] == {}
+        assert e.value.message == "Invalid token"
+        assert e.value.code == "INVALID_TOKEN"
+        mock_ctx_error.assert_awaited_once_with("Invalid token")

@@ -29,7 +29,3 @@ jobs:
     
     - name: Run tests
       run: uv run pytest
-      env:
-        # workaround - this should be loaded from some test settings file
-        SALEOR_API_URL: https://example.saleor.cloud/graphql/
-        SALEOR_AUTH_TOKEN: test-token

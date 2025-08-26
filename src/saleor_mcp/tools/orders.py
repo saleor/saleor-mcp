@@ -1,6 +1,6 @@
 from typing import Annotated, Any
 
-from fastmcp import FastMCP
+from fastmcp import Context, FastMCP
 
 from ..saleor_client import SaleorRequestError, make_saleor_request
 
@@ -38,6 +38,7 @@ query GetOrders($first: Int, $after: String) {
 
 @orders_router.tool()
 async def orders(
+    ctx: Context,
     first: Annotated[
         int | None, "Number of orders to fetch (max 100 per request)"
     ] = 100,
@@ -45,10 +46,10 @@ async def orders(
         str | None, "Cursor for pagination - fetch orders after this cursor"
     ] = None,
 ) -> dict[str, Any]:
-    """Fetch comprehensive order data from Saleor GraphQL API.
+    """Fetch list of orders from Saleor GraphQL API.
 
-    This tool retrieves detailed order information including customer data,
-    product details, payment information, shipping details, and order totals.
+    This tool retrieves basic order information including order ID, number, status,
+    created and updated timestamps, payment status, and total amount.
     """
 
     data = {}
@@ -58,16 +59,11 @@ async def orders(
             variables={"first": first, "after": after},
         )
     except SaleorRequestError as e:
-        return {
-            "success": False,
-            "error": e.message,
-            "code": e.code,
-            "data": {},
-        }
+        await ctx.error(str(e))
+        raise
 
     orders_data = data.get("orders", {})
     return {
-        "success": True,
         "data": {
             "orders": orders_data.get("edges", []),
             "pageInfo": orders_data.get("pageInfo", {}),

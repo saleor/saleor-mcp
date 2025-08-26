@@ -1,23 +1,21 @@
-from contextlib import asynccontextmanager
+from unittest.mock import MagicMock
 
 import pytest
-from dotenv import load_dotenv
-
-from saleor_mcp.settings import settings
-
-# Load test settings
-load_dotenv(".test.env", override=True)
-settings.__init__()
+from fastmcp.server.context import Context, set_context
 
 
-@asynccontextmanager
-async def settings_override(**kwargs):
-    original_settings = settings.model_dump()
-    for key, value in kwargs.items():
-        setattr(settings, key, value)
-    yield
-    for key, value in original_settings.items():
-        setattr(settings, key, value)
+@pytest.fixture
+def context():
+    context = Context(fastmcp=MagicMock())
+    return set_context(context)
+
+
+@pytest.fixture
+def mock_http_headers():
+    return {
+        "x-saleor-api-url": "https://example.saleor.cloud/graphql/",
+        "x-saleor-auth-token": "test-token",
+    }
 
 
 @pytest.fixture
