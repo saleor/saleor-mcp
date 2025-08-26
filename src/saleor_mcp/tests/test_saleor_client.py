@@ -52,9 +52,7 @@ async def test_successful_request(mock_http_headers):
 
     with (
         patch("httpx.AsyncClient", return_value=mock_client.return_value),
-        patch(
-            "saleor_mcp.saleor_client.get_http_headers", return_value=mock_http_headers
-        ),
+        patch("saleor_mcp.config.get_http_headers", return_value=mock_http_headers),
     ):
         result = await make_saleor_request(
             query="query { orders { edges { node { id } } } }",
@@ -93,9 +91,7 @@ async def test_graphql_errors_in_response(mock_http_headers):
 
     with (
         patch("httpx.AsyncClient", return_value=mock_client.return_value),
-        patch(
-            "saleor_mcp.saleor_client.get_http_headers", return_value=mock_http_headers
-        ),
+        patch("saleor_mcp.config.get_http_headers", return_value=mock_http_headers),
     ):
         with pytest.raises(SaleorRequestError) as exc_info:
             await make_saleor_request(
@@ -114,9 +110,7 @@ async def test_graphql_error_without_code(mock_http_headers):
 
     with (
         patch("httpx.AsyncClient", return_value=mock_client.return_value),
-        patch(
-            "saleor_mcp.saleor_client.get_http_headers", return_value=mock_http_headers
-        ),
+        patch("saleor_mcp.config.get_http_headers", return_value=mock_http_headers),
     ):
         with pytest.raises(SaleorRequestError) as exc_info:
             await make_saleor_request(
@@ -140,9 +134,7 @@ async def test_http_status_error(mock_http_headers):
 
     with (
         patch("httpx.AsyncClient", return_value=mock_client.return_value),
-        patch(
-            "saleor_mcp.saleor_client.get_http_headers", return_value=mock_http_headers
-        ),
+        patch("saleor_mcp.config.get_http_headers", return_value=mock_http_headers),
     ):
         with pytest.raises(SaleorRequestError) as exc_info:
             await make_saleor_request(
@@ -162,9 +154,7 @@ async def test_request_error(mock_http_headers):
 
     with (
         patch("httpx.AsyncClient", return_value=mock_client.return_value),
-        patch(
-            "saleor_mcp.saleor_client.get_http_headers", return_value=mock_http_headers
-        ),
+        patch("saleor_mcp.config.get_http_headers", return_value=mock_http_headers),
     ):
         with pytest.raises(SaleorRequestError) as exc_info:
             await make_saleor_request(
@@ -182,9 +172,7 @@ async def test_unexpected_error(mock_http_headers):
 
     with (
         patch("httpx.AsyncClient", return_value=mock_client.return_value),
-        patch(
-            "saleor_mcp.saleor_client.get_http_headers", return_value=mock_http_headers
-        ),
+        patch("saleor_mcp.config.get_http_headers", return_value=mock_http_headers),
     ):
         with pytest.raises(SaleorRequestError) as exc_info:
             await make_saleor_request(
@@ -204,9 +192,7 @@ async def test_successful_request_with_empty_data(mock_http_headers):
 
     with (
         patch("httpx.AsyncClient", return_value=mock_client.return_value),
-        patch(
-            "saleor_mcp.saleor_client.get_http_headers", return_value=mock_http_headers
-        ),
+        patch("saleor_mcp.config.get_http_headers", return_value=mock_http_headers),
     ):
         result = await make_saleor_request(
             query="query { orders { edges { node { id } } } }",
@@ -223,9 +209,7 @@ async def test_successful_request_without_data_field(mock_http_headers):
 
     with (
         patch("httpx.AsyncClient", return_value=mock_client.return_value),
-        patch(
-            "saleor_mcp.saleor_client.get_http_headers", return_value=mock_http_headers
-        ),
+        patch("saleor_mcp.config.get_http_headers", return_value=mock_http_headers),
     ):
         result = await make_saleor_request(
             query="query { orders { edges { node { id } } } }",

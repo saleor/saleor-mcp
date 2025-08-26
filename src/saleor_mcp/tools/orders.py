@@ -1,8 +1,9 @@
 from typing import Annotated, Any
 
 from fastmcp import Context, FastMCP
+from fastmcp.exceptions import ToolError
 
-from ..saleor_client import SaleorRequestError, make_saleor_request
+from ..saleor_client import make_saleor_request
 
 orders_router = FastMCP("Orders MCP")
 
@@ -58,7 +59,7 @@ async def orders(
             query=ORDERS_LIST_QUERY,
             variables={"first": first, "after": after},
         )
-    except SaleorRequestError as e:
+    except ToolError as e:
         await ctx.error(str(e))
         raise
 

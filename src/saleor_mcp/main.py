@@ -1,9 +1,11 @@
 from fastmcp import FastMCP
 
-from saleor_mcp.tools import orders_router
+from saleor_mcp.tools import orders_router, utils_router
 
 mcp = FastMCP("Saleor MCP Server")
 mcp.mount(orders_router)
+mcp.mount(utils_router)
+
 app = mcp.http_app()
 
 
