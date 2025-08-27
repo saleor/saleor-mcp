@@ -10,7 +10,7 @@ app = mcp.http_app()
 
 
 def main():
-    mcp.run(transport="http", host="0.0.0.0", port=6000)
+    mcp.run(transport="http", host="127.0.0.1", port=6000)
 
 
 if __name__ == "__main__":
