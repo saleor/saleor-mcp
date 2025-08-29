@@ -1,0 +1,48 @@
+name: Check Licenses
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+    paths:
+      # Self
+      - ".github/workflows/check-licenses.yaml"
+      # Python Ecosystem
+      - "**/uv.lock"
+      # JS/TS Ecosystem
+      - "**/package.json"
+      - "**/pnpm-lock.yaml"
+      - "**/package-lock.json"
+
+jobs:
+  default:
+    permissions:
+      contents: read
+      pull-requests: write
+    uses: saleor/saleor-internal-actions/.github/workflows/run-license-check.yaml@v1
+    with:
+      # List of ecosystems to scan.
+      ecosystems: >-
+        python
+        javascript
+      # Grant rules (https://github.com/anchore/grant/blob/4362dc22cf5ea9baeccfa59b2863879afe0c30d7/README.md#usage)
+      rules: |
+        # NOTE: EUPL-1.2 and up are compatible with our project, only versions below 1.2 aren't.
+        - pattern: "*eupl-1.0*"
+          name: "deny-eupl-1.0"
+          mode: "deny"
+          reason: >-
+            EUPL is not compatible with AGPL-3.0 as per Appendix in the license's text
+            https://spdx.org/licenses/preview/EUPL-1.0.html
+        - pattern: "*eupl-1.1*"
+          name: "deny-eupl-1.0"
+          mode: "deny"
+          reason: >-
+            EUPL is not compatible with AGPL-3.0 as per Appendix in the license's text
+            https://spdx.org/licenses/preview/EUPL-1.1.html
+        - pattern: "*proprietary*"
+          name: "deny-proprietary"
+          mode: "deny"
+          reason: >-
+            Proprietary licenses are not compatible with AGPL-3.0.
+            They need to be reviewed on a case-by-case basis.
