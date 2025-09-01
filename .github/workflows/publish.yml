@@ -59,6 +59,5 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ env.IMAGE_TAGS }}
-          target: prod
           cache-from: type=gha,scope=buildkit-master
           cache-to: type=gha,scope=buildkit-master
