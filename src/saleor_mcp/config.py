@@ -1,7 +1,16 @@
+import os
+import re
 from dataclasses import dataclass
 
 from fastmcp.exceptions import ToolError
 from fastmcp.server.dependencies import get_http_headers
+
+
+def validate_api_url(url, pattern):
+    """Validate if the given URL matches the allowed domain pattern."""
+    regex_pattern = pattern.replace("*", ".*")
+    regex = re.compile(f"^{regex_pattern}$")
+    return bool(regex.match(url))
 
 
 @dataclass
@@ -16,11 +25,15 @@ def get_config_from_headers() -> SaleorConfig:
     Note: This function works only within a request context.
     """
 
+    allowed_domain_pattern = os.getenv("ALLOWED_DOMAIN_PATTERN", "")
     headers = get_http_headers()
 
     api_url = headers.get("x-saleor-api-url")
     if not api_url:
         raise ToolError("Missing X-Saleor-API-URL header")
+
+    if allowed_domain_pattern and not validate_api_url(api_url, allowed_domain_pattern):
+        raise ToolError(f"API URL '{api_url}' is not allowed")
 
     auth_token = headers.get("x-saleor-auth-token")
     if not auth_token:
