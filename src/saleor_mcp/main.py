@@ -2,10 +2,17 @@ from fastmcp import FastMCP
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
-from saleor_mcp.tools import orders_router, utils_router
+from saleor_mcp.tools import (
+    channels_router,
+    orders_router,
+    products_router,
+    utils_router,
+)
 
 mcp = FastMCP("Saleor MCP Server")
+mcp.mount(channels_router)
 mcp.mount(orders_router)
+mcp.mount(products_router)
 mcp.mount(utils_router)
 
 

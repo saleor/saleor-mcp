@@ -1,7 +1,11 @@
+import logging
+
 import httpx
 from fastmcp.exceptions import ToolError
 
 from .config import get_config_from_headers
+
+logger = logging.getLogger(__name__)
 
 REQUEST_TIMEOUT = 30.0
 
@@ -35,6 +39,13 @@ async def make_saleor_request(query: str, variables: dict) -> dict:
         "Content-Type": "application/json",
         "Authorization": f"Bearer {saleor_headers.auth_token}",
     }
+
+    logger.info(
+        "Making request to Saleor API at %s, query=%s, variables=%s",
+        saleor_headers.api_url,
+        query[:20] + "...",
+        variables,
+    )
 
     data = {}
 
