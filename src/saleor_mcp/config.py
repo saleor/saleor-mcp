@@ -1,6 +1,6 @@
 import os
-import re
 from dataclasses import dataclass
+from fnmatch import fnmatch
 
 from fastmcp.exceptions import ToolError
 from fastmcp.server.dependencies import get_http_headers
@@ -8,9 +8,7 @@ from fastmcp.server.dependencies import get_http_headers
 
 def validate_api_url(url, pattern):
     """Validate if the given URL matches the allowed domain pattern."""
-    regex_pattern = pattern.replace("*", ".*")
-    regex = re.compile(f"^{regex_pattern}$")
-    return bool(regex.match(url))
+    return fnmatch(url, pattern)
 
 
 @dataclass

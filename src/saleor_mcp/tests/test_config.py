@@ -11,6 +11,7 @@ from saleor_mcp.config import get_config_from_headers, validate_api_url
         ("https://example.saleor.cloud", "https://*.saleor.cloud", True),
         ("https://sub.domain.saleor.cloud", "https://*.saleor.cloud", True),
         ("https://other.saleor.cloud", "https://exact.saleor.cloud", False),
+        ("https://malicious-saleor.cloud", "https://*.saleor.cloud", False),
     ],
 )
 def test_validate_api_url(url, pattern, expected):
