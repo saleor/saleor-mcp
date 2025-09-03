@@ -14,7 +14,7 @@ async def health_check(request: Request):
     return JSONResponse({"status": "healthy"})
 
 
-app = mcp.http_app()
+app = mcp.http_app(stateless_http=True)
 
 
 def main():
