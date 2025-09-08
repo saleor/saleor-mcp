@@ -1,0 +1,58 @@
+query ListProducts(
+  $first: Int
+  $after: String
+  $channel: String
+  $where: ProductWhereInput
+  $sortBy: ProductOrder
+  $search: String
+) {
+  products(
+    first: $first
+    after: $after
+    channel: $channel
+    where: $where
+    sortBy: $sortBy
+    search: $search
+  ) {
+    pageInfo {
+      hasNextPage
+      hasPreviousPage
+      startCursor
+      endCursor
+    }
+    edges {
+      node {
+        id
+        name
+        slug
+        externalReference
+        productType {
+          id
+          name
+        }
+        category {
+          id
+          name
+        }
+        created
+        updatedAt
+        pricing {
+          priceRange {
+            start {
+              gross {
+                currency
+                amount
+              }
+            }
+            stop {
+              gross {
+                currency
+                amount
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

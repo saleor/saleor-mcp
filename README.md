@@ -40,3 +40,12 @@ The MCP server requires certain HTTP headers to be set for authentication and AP
 - `X-Saleor-Auth-Token`: The authentication token for accessing the Saleor API.
 
 Make sure to include these headers in your requests to the MCP server.
+
+## Development
+
+This project uses [ariadne-codegen](https://github.com/mirumee/ariadne-codegen/) to generate Saleor API client code from the GraphQL schema.
+To regenerate the client locally run:
+
+```bash
+ariadne-codegen
+```

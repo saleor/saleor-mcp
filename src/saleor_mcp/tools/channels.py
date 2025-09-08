@@ -1,50 +1,37 @@
 from typing import Any
 
 from fastmcp import Context, FastMCP
-from fastmcp.exceptions import ToolError
 
-from ..saleor_client import make_saleor_request
+from ..ctx_utils import get_saleor_client
 
 channels_router = FastMCP("Channels MCP")
 
-CHANNELS_LIST_QUERY = """
-query GetChannels {
-  channels {
-    id
-    slug
-    name
-    isActive
-    currencyCode
-    defaultCountry {
-      code
-    }
-    warehouses {
-      id
-      name
-    }
-  }
-}
-"""
 
-
-@channels_router.tool()
+@channels_router.tool(
+    annotations={
+        "title": "Fetch channels",
+        "readOnlyHint": True,
+        "idempotentHint": True,
+        "openWorldHint": True,
+    }
+)
 async def channels(ctx: Context) -> dict[str, Any]:
     """Fetch the list of channels from Saleor.
 
-    For each channel fetches the following details: id, slug, name, isActive,
-    currencyCode, defaultCountry (code), warehouses (id, name).
+    This tools retrieves the list of channels. For each channel it returns information
+    such as: ID, name, slug, currency code, default country, whether the channel is
+    active, and the list of warehouses.
     """
 
     data = {}
+    client = get_saleor_client()
     try:
-        data = await make_saleor_request(
-            query=CHANNELS_LIST_QUERY,
-            variables={},
-        )
+        data = await client.list_channels()
     except Exception as e:
-        raise ToolError(f"Failed to fetch channels: {str(e)}") from e
+        await ctx.error(str(e))
+        raise
 
-    channels_data = data.get("channels", [])
+    channels_data = data.channels or []
     return {
         "data": {
             "channels": channels_data,

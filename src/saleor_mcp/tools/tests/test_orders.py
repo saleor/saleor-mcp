@@ -2,7 +2,7 @@ from unittest.mock import patch
 
 import pytest
 
-from saleor_mcp.saleor_client import SaleorRequestError
+from saleor_mcp.old_saleor_client import SaleorRequestError
 from saleor_mcp.tools.orders import orders
 
 

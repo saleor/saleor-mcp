@@ -21,7 +21,12 @@ async def health_check(request: Request):
     return JSONResponse({"status": "healthy"})
 
 
-app = mcp.http_app(stateless_http=True)
+@mcp.custom_route("/", methods=["GET"])
+async def index(request: Request):
+    return JSONResponse({"message": "Saleor MCP is running"})
+
+
+app = mcp.http_app()
 
 
 def main():

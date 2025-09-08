@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import httpx
 import pytest
 
-from saleor_mcp.saleor_client import SaleorRequestError, make_saleor_request
+from saleor_mcp.old_saleor_client import SaleorRequestError, make_saleor_request
 
 
 def create_mock_http_client(response_data=None, side_effect=None, status_error=None):

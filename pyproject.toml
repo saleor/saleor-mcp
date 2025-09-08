@@ -9,6 +9,8 @@ dependencies = [
     "uvicorn>=0.24.0",
     "httpx>=0.25.0",
     "pydantic>=2.5.0",
+    "graphql-core>=3.2.0",
+    "ariadne-codegen>=0.15.2",
 ]
 
 [build-system]
@@ -90,3 +92,10 @@ addopts = [
     "--disable-socket",
     "--allow-unix-socket",
 ]
+
+[tool.ariadne-codegen]
+remote_schema_url = "https://master.staging.saleor.cloud/graphql/"
+queries_path = "src/saleor_mcp/graphql"
+target_package_name = "saleor_client"
+target_package_path = "src/saleor_mcp"
+convert_to_snake_case = false

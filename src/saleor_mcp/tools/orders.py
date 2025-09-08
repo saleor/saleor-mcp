@@ -1,43 +1,21 @@
 from typing import Annotated, Any
 
 from fastmcp import Context, FastMCP
-from fastmcp.exceptions import ToolError
 
-from ..saleor_client import make_saleor_request
+from ..ctx_utils import get_saleor_client
+from ..saleor_client.input_types import OrderSortingInput, OrderWhereInput
 
 orders_router = FastMCP("Orders MCP")
 
-ORDERS_LIST_QUERY = """
-query GetOrders($first: Int, $after: String, $sortBy: OrderSortingInput, $where: OrderWhereInput) {
-  orders(first: $first, after: $after, sortBy: $sortBy, where: $where) {
-    pageInfo {
-      hasNextPage
-      hasPreviousPage
-      startCursor
-      endCursor
-    }
-    edges {
-      node {
-        id
-        number
-        status
-        created
-        updatedAt
-        paymentStatus
-        total {
-          gross {
-            amount
-            currency
-          }
-        }
-      }
-    }
-  }
-}
-"""
 
-
-@orders_router.tool()
+@orders_router.tool(
+    annotations={
+        "title": "Fetch orders",
+        "readOnlyHint": True,
+        "idempotentHint": True,
+        "openWorldHint": True,
+    }
+)
 async def orders(
     ctx: Context,
     first: Annotated[
@@ -46,40 +24,50 @@ async def orders(
     after: Annotated[
         str | None, "Cursor for pagination - fetch orders after this cursor"
     ] = None,
-    sortBy: Annotated[str | None, "Sort orders by specific field"] = None,
-    where: Annotated[dict | None, "Filter orders by specific criteria"] = None,
+    sort_by: Annotated[
+        OrderSortingInput | None, "Sort orders by specific field"
+    ] = None,
+    where: Annotated[
+        OrderWhereInput | None, "Filter orders by specific criteria"
+    ] = None,
 ) -> dict[str, Any]:
     """Fetch list of orders from Saleor GraphQL API.
 
-    This tool retrieves basic order information including order ID, number, status,
-    created and updated timestamps, payment status, total amount. Usage guidelines:
-    - Use `first` and `after` parameters for pagination (max 100 orders per request);
-    - Use `sortBy` to sort orders by fields: number, createdAt, lastModifiedAt, customer,
-    payment status, status;
-    - Use `where` to filter orders by criteria: IDs, number, channel, creation date,
-    update date, user, status, payment status. Note: date filtering supports ranges.
+    This tool retrieves the list of orders. For each order it returns information such
+    as: ID, number, status, creation date, last update date, payment status, user email,
+    total amount, shipping address, billing address, order lines which include:
+    quantity, product SKU, variant name, product ID, product name, unit price.
+
+    Args:
+        ctx (Context): The tool execution context.
+        first (int | None): Number of orders to fetch (max 100 per request).
+        after (str | None): Cursor for pagination - fetch orders after this cursor.
+        sort_by (OrderSortingInput | None): Sort orders by specific field.
+        where (OrderWhereInput | None): Filter orders by specific criteria.
+
     """
 
+    sort_by = sort_by.model_dump(exclude_unset=True) if sort_by else None
+    where = where.model_dump(exclude_unset=True) if where else None
+
     data = {}
+    client = get_saleor_client()
     try:
-        data = await make_saleor_request(
-            query=ORDERS_LIST_QUERY,
-            variables={
-                "first": first,
-                "after": after,
-                "sortBy": sortBy,
-                "where": where,
-            },
+        data = await client.list_orders(
+            first=first, after=after, sortBy=sort_by, where=where
         )
-    except ToolError as e:
+    except Exception as e:
         await ctx.error(str(e))
         raise
 
-    orders_data = data.get("orders", [])
+    orders_data = data.orders
+    edges = orders_data.edges if orders_data and orders_data.edges else []
+    page_info = orders_data.pageInfo if orders_data else None
+
     return {
         "data": {
-            "orders": orders_data.get("edges", []),
-            "pageInfo": orders_data.get("pageInfo", {}),
-            "totalFetched": len(orders_data.get("edges", [])),
+            "orders": edges,
+            "pageInfo": page_info,
+            "totalFetched": len(edges),
         },
     }
