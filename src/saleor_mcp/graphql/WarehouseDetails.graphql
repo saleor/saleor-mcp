@@ -1,0 +1,38 @@
+query WarehouseDetails($id: ID) {
+  warehouse(id: $id) {
+    id
+    name
+    slug
+    address {
+      firstName
+      lastName
+      streetAddress1
+      streetAddress2
+      city
+      postalCode
+    }
+    clickAndCollectOption
+    shippingZones(first: 100) {
+      edges {
+        node {
+          id
+          name
+          description
+          channels {
+            id
+            slug
+            name
+          }
+          countries {
+            code
+            country
+          }
+        }
+      }
+    }
+    metadata {
+      key
+      value
+    }
+  }
+}

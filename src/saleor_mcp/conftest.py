@@ -1,27 +1,18 @@
-from unittest.mock import MagicMock
-
 import pytest
-from fastmcp.server.context import Context, set_context
+
+from saleor_mcp.config import SaleorConfig
+from saleor_mcp.saleor_client.list_orders import ListOrders
 
 
 @pytest.fixture
-def context():
-    context = Context(fastmcp=MagicMock())
-    return set_context(context)
-
-
-@pytest.fixture
-def mock_http_headers():
-    return {
-        "x-saleor-api-url": "https://example.saleor.cloud/graphql/",
-        "x-saleor-auth-token": "test-token",
-    }
+def mock_saleor_config():
+    return SaleorConfig(api_url="http://example.com/graphql", auth_token="test-token")
 
 
 @pytest.fixture
 def sample_orders_response():
-    return {
-        "orders": {
+    return ListOrders(
+        orders={
             "edges": [
                 {
                     "node": {
@@ -32,9 +23,49 @@ def sample_orders_response():
                         "updatedAt": "2023-01-02T00:00:00Z",
                         "paymentStatus": "FULLY_CHARGED",
                         "total": {"gross": {"amount": 100.50, "currency": "USD"}},
+                        "userEmail": "customer@example.com",
+                        "lines": [
+                            {
+                                "quantity": 2,
+                                "unitPrice": {
+                                    "gross": {"amount": 50.25, "currency": "USD"}
+                                },
+                                "productName": "Test Product",
+                                "productSku": "TEST-SKU",
+                                "variantName": "Default",
+                                "productId": "UHJvZHVjdDo=",
+                                "variant": {
+                                    "id": "UHJvZHVjdFZhcmlhbnQ6MQ==",
+                                    "name": "Test Variant",
+                                    "product": {
+                                        "id": "UHJvZHVjdDo=",
+                                        "name": "Test Product",
+                                    },
+                                },
+                            }
+                        ],
+                        "shippingAddress": {
+                            "firstName": "John",
+                            "lastName": "Doe",
+                            "streetAddress1": "123 Main St",
+                            "streetAddress2": "Apt 4B",
+                            "city": "Anytown",
+                            "postalCode": "12345",
+                            "country": {"code": "US", "country": "United States"},
+                        },
+                        "billingAddress": {
+                            "firstName": "John",
+                            "lastName": "Doe",
+                            "streetAddress1": "123 Main St",
+                            "streetAddress2": "Apt 4B",
+                            "city": "Anytown",
+                            "postalCode": "12345",
+                            "country": {"code": "US", "country": "United States"},
+                        },
                     }
                 },
             ],
+            "totalCount": 1,
             "pageInfo": {
                 "hasNextPage": True,
                 "hasPreviousPage": False,
@@ -42,4 +73,4 @@ def sample_orders_response():
                 "endCursor": "cursor456",
             },
         }
-    }
+    )

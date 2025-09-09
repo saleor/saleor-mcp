@@ -1,48 +1,54 @@
 from unittest.mock import patch
 
 import pytest
+from fastmcp import Client as MCPClient
+from fastmcp.exceptions import ToolError
 
-from saleor_mcp.saleor_client import SaleorRequestError
-from saleor_mcp.tools.orders import orders
+from saleor_mcp.main import mcp
+from saleor_mcp.saleor_client.client import Client as SaleorClient
 
 
 @pytest.mark.asyncio
-async def test_successful_orders_fetch(sample_orders_response, context):
+async def test_successful_orders_fetch(sample_orders_response, mock_saleor_config):
     with (
-        context,
-        patch("saleor_mcp.tools.orders.make_saleor_request") as mock_make_request,
+        patch("saleor_mcp.ctx_utils.get_config_from_headers") as mock_get_config,
+        patch.object(SaleorClient, "list_orders") as mock_list_orders_request,
     ):
-        mock_make_request.return_value = sample_orders_response
+        mock_get_config.return_value = mock_saleor_config
+        mock_list_orders_request.return_value = sample_orders_response
 
-        tool_result = await orders.run({"first": 10, "after": "cursor123"})
-        result = tool_result.structured_content
+        async with MCPClient(mcp) as mcp_client:
+            result = await mcp_client.call_tool(
+                "orders", {"first": 10, "after": "cursor123"}
+            )
 
-        assert len(result["data"]["orders"]) == 1
-        assert result["data"]["orders"][0]["node"]["number"] == "001"
-        assert result["data"]["pageInfo"]["hasNextPage"] is True
-        assert result["data"]["totalFetched"] == 1
+        data = result.data["data"]
+        assert len(data["orders"]) == 1
+        assert data["orders"][0]["node"]["number"] == "001"
+        assert data["pageInfo"]["hasNextPage"] is True
+        assert data["totalFetched"] == 1
 
         # Verify the request was made with correct parameters
-        mock_make_request.assert_called_once()
-        call_args = mock_make_request.call_args
-        assert call_args[1]["variables"]["first"] == 10
-        assert call_args[1]["variables"]["after"] == "cursor123"
+        mock_list_orders_request.assert_called_once()
+        call_args = mock_list_orders_request.call_args
+        assert call_args[1]["first"] == 10
+        assert call_args[1]["after"] == "cursor123"
 
 
 @pytest.mark.asyncio
-async def test_orders_fetch_with_saleor_error(context):
+async def test_orders_fetch_with_saleor_error(mock_saleor_config):
     with (
-        context,
-        patch("saleor_mcp.tools.orders.make_saleor_request") as mock_make_request,
-        patch("saleor_mcp.tools.orders.Context.error") as mock_ctx_error,
+        patch("saleor_mcp.ctx_utils.get_config_from_headers") as mock_get_config,
+        patch.object(SaleorClient, "list_orders") as mock_list_orders_request,
     ):
-        mock_make_request.side_effect = SaleorRequestError(
-            "Invalid token", "INVALID_TOKEN"
-        )
+        mock_get_config.return_value = mock_saleor_config
+        mock_list_orders_request.side_effect = Exception("Invalid token")
 
-        with pytest.raises(SaleorRequestError) as e:
-            await orders.run({})
+        async with MCPClient(mcp) as mcp_client:
+            with pytest.raises(ToolError) as e:
+                await mcp_client.call_tool("orders", {"first": 10})
 
-        assert e.value.message == "Invalid token"
-        assert e.value.code == "INVALID_TOKEN"
-        mock_ctx_error.assert_awaited_once_with("Invalid token")
+        assert "Invalid token" in str(e.value)
+
+        # Verify the request was attempted
+        mock_list_orders_request.assert_called_once()

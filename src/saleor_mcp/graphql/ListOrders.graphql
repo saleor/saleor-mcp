@@ -1,0 +1,67 @@
+fragment Address on Address {
+  firstName
+  lastName
+  streetAddress1
+  streetAddress2
+  country {
+    code
+  }
+  postalCode
+}
+
+query ListOrders(
+  $first: Int
+  $after: String
+  $sortBy: OrderSortingInput
+  $where: OrderWhereInput
+) {
+  orders(first: $first, after: $after, sortBy: $sortBy, where: $where) {
+    pageInfo {
+      hasNextPage
+      hasPreviousPage
+      startCursor
+      endCursor
+    }
+    totalCount
+    edges {
+      node {
+        id
+        number
+        status
+        created
+        updatedAt
+        paymentStatus
+        userEmail
+        total {
+          gross {
+            amount
+            currency
+          }
+        }
+        lines {
+          quantity
+          productSku
+          variant {
+            name
+            product {
+              id
+              name
+            }
+          }
+          unitPrice {
+            gross {
+              currency
+              amount
+            }
+          }
+        }
+        shippingAddress {
+          ...Address
+        }
+        billingAddress {
+          ...Address
+        }
+      }
+    }
+  }
+}

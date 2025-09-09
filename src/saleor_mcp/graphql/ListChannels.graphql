@@ -1,0 +1,16 @@
+query ListChannels {
+  channels {
+    id
+    slug
+    name
+    isActive
+    currencyCode
+    defaultCountry {
+      code
+    }
+    warehouses {
+      id
+      name
+    }
+  }
+}

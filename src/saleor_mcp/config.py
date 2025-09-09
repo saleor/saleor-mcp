@@ -1,9 +1,13 @@
+import logging
 import os
 import re
 from dataclasses import dataclass
 
 from fastmcp.exceptions import ToolError
 from fastmcp.server.dependencies import get_http_headers
+
+LOGLEVEL = os.environ.get("LOGLEVEL", "INFO").upper()
+logging.basicConfig(level=LOGLEVEL)
 
 
 def validate_api_url(url, pattern):
