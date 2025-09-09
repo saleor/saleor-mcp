@@ -33,6 +33,7 @@ dev = [
 [tool.ruff]
 target-version = "py312"
 line-length = 88
+exclude = ["src/saleor_mcp/saleor_client/*"]
 
   [tool.ruff.lint]
   select = [
