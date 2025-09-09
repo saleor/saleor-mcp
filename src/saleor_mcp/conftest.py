@@ -65,6 +65,7 @@ def sample_orders_response():
                     }
                 },
             ],
+            "totalCount": 1,
             "pageInfo": {
                 "hasNextPage": True,
                 "hasPreviousPage": False,

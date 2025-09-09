@@ -12,6 +12,7 @@ class ListProducts(BaseModel):
 
 class ListProductsProducts(BaseModel):
     pageInfo: "ListProductsProductsPageInfo"
+    totalCount: Optional[int]
     edges: List["ListProductsProductsEdges"]
 
 

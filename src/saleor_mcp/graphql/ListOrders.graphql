@@ -22,6 +22,7 @@ query ListOrders(
       startCursor
       endCursor
     }
+    totalCount
     edges {
       node {
         id

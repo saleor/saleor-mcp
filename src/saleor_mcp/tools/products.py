@@ -3,7 +3,11 @@ from typing import Annotated, Any
 from fastmcp import Context, FastMCP
 
 from ..ctx_utils import get_saleor_client
-from ..saleor_client.input_types import ProductOrder, ProductWhereInput
+from ..saleor_client.input_types import (
+    ProductOrder,
+    ProductWhereInput,
+    StockFilterInput,
+)
 
 products_router = FastMCP("Products MCP")
 
@@ -73,5 +77,94 @@ async def products(
             "products": edges,
             "pageInfo": page_info,
             "totalFetched": len(edges),
+        },
+    }
+
+
+@products_router.tool(
+    annotations={
+        "title": "Fetch stocks",
+        "readOnlyHint": True,
+        "idempotentHint": True,
+        "openWorldHint": True,
+    }
+)
+async def stocks(
+    ctx: Context,
+    first: Annotated[
+        int | None, "Number of stocks to fetch (max 100 per request)"
+    ] = 100,
+    after: Annotated[
+        str | None, "Cursor for pagination - fetch stocks after this cursor"
+    ] = None,
+    filter: Annotated[
+        StockFilterInput | None, "Filter stocks by specific criteria"
+    ] = None,
+) -> dict[str, Any]:
+    """Fetch list of stocks from Saleor GraphQL API.
+
+    This tool retrieves stock information such as: ID, quantity, allocated quantity,
+    warehouse information, and associated product variant details.
+
+    """
+
+    filter_data = filter.model_dump(exclude_unset=True) if filter else None
+
+    data = {}
+    client = get_saleor_client()
+    try:
+        data = await client.list_stocks(
+            first=first,
+            after=after,
+            filter=filter_data,
+        )
+    except Exception as e:
+        await ctx.error(str(e))
+        raise
+
+    stocks_data = data.stocks
+    edges = stocks_data.edges if stocks_data and stocks_data.edges else []
+    page_info = stocks_data.pageInfo if stocks_data else None
+    return {
+        "data": {
+            "stocks": edges,
+            "pageInfo": page_info,
+            "totalFetched": len(edges),
+        },
+    }
+
+
+@products_router.tool(
+    annotations={
+        "title": "Fetch warehouse details",
+        "readOnlyHint": True,
+        "idempotentHint": True,
+        "openWorldHint": True,
+    }
+)
+async def warehouse_details(
+    ctx: Context,
+    id: Annotated[str | None, "ID of the warehouse to fetch details for"] = None,
+) -> dict[str, Any]:
+    """Fetch warehouse details from Saleor GraphQL API.
+
+    This tool retrieves detailed warehouse information including: ID, name, slug,
+    address details, click and collect options, associated shipping zones with
+    their channels and countries, and metadata.
+
+    """
+
+    data = {}
+    client = get_saleor_client()
+    try:
+        data = await client.warehouse_details(id=id)
+    except Exception as e:
+        await ctx.error(str(e))
+        raise
+
+    warehouse_data = data.warehouse
+    return {
+        "data": {
+            "warehouse": warehouse_data,
         },
     }

@@ -1,0 +1,55 @@
+query ListCustomers(
+  $first: Int
+  $sortBy: UserSortingInput
+  $where: CustomerWhereInput
+  $search: String
+) {
+  customers(first: $first, sortBy: $sortBy, where: $where, search: $search) {
+    pageInfo {
+      hasNextPage
+      hasPreviousPage
+      startCursor
+      endCursor
+    }
+    totalCount
+    edges {
+      node {
+        id
+        email
+        firstName
+        lastName
+        isActive
+        isConfirmed
+        checkouts {
+          totalCount
+        }
+        orders {
+          totalCount
+        }
+        languageCode
+        lastLogin
+        dateJoined
+        defaultShippingAddress {
+          firstName
+          lastName
+          streetAddress1
+          streetAddress2
+          country {
+            code
+          }
+          postalCode
+        }
+        defaultBillingAddress {
+          firstName
+          lastName
+          streetAddress1
+          streetAddress2
+          country {
+            code
+          }
+          postalCode
+        }
+      }
+    }
+  }
+}

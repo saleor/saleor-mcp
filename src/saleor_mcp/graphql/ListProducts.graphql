@@ -20,6 +20,7 @@ query ListProducts(
       startCursor
       endCursor
     }
+    totalCount
     edges {
       node {
         id

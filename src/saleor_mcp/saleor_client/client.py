@@ -6,14 +6,20 @@ from typing import Any, Dict, Optional, Union
 from .async_base_client import AsyncBaseClient
 from .base_model import UNSET, UnsetType
 from .input_types import (
+    CustomerWhereInput,
     OrderSortingInput,
     OrderWhereInput,
     ProductOrder,
     ProductWhereInput,
+    StockFilterInput,
+    UserSortingInput,
 )
 from .list_channels import ListChannels
+from .list_customers import ListCustomers
 from .list_orders import ListOrders
 from .list_products import ListProducts
+from .list_stocks import ListStocks
+from .warehouse_details import WarehouseDetails
 
 
 def gql(q: str) -> str:
@@ -49,6 +55,80 @@ class Client(AsyncBaseClient):
         data = self.get_data(response)
         return ListChannels.model_validate(data)
 
+    async def list_customers(
+        self,
+        first: Union[Optional[int], UnsetType] = UNSET,
+        sortBy: Union[Optional[UserSortingInput], UnsetType] = UNSET,
+        where: Union[Optional[CustomerWhereInput], UnsetType] = UNSET,
+        search: Union[Optional[str], UnsetType] = UNSET,
+        **kwargs: Any
+    ) -> ListCustomers:
+        query = gql(
+            """
+            query ListCustomers($first: Int, $sortBy: UserSortingInput, $where: CustomerWhereInput, $search: String) {
+              customers(first: $first, sortBy: $sortBy, where: $where, search: $search) {
+                pageInfo {
+                  hasNextPage
+                  hasPreviousPage
+                  startCursor
+                  endCursor
+                }
+                totalCount
+                edges {
+                  node {
+                    id
+                    email
+                    firstName
+                    lastName
+                    isActive
+                    isConfirmed
+                    checkouts {
+                      totalCount
+                    }
+                    orders {
+                      totalCount
+                    }
+                    languageCode
+                    lastLogin
+                    dateJoined
+                    defaultShippingAddress {
+                      firstName
+                      lastName
+                      streetAddress1
+                      streetAddress2
+                      country {
+                        code
+                      }
+                      postalCode
+                    }
+                    defaultBillingAddress {
+                      firstName
+                      lastName
+                      streetAddress1
+                      streetAddress2
+                      country {
+                        code
+                      }
+                      postalCode
+                    }
+                  }
+                }
+              }
+            }
+            """
+        )
+        variables: Dict[str, object] = {
+            "first": first,
+            "sortBy": sortBy,
+            "where": where,
+            "search": search,
+        }
+        response = await self.execute(
+            query=query, operation_name="ListCustomers", variables=variables, **kwargs
+        )
+        data = self.get_data(response)
+        return ListCustomers.model_validate(data)
+
     async def list_orders(
         self,
         first: Union[Optional[int], UnsetType] = UNSET,
@@ -67,6 +147,7 @@ class Client(AsyncBaseClient):
                   startCursor
                   endCursor
                 }
+                totalCount
                 edges {
                   node {
                     id
@@ -161,6 +242,7 @@ class Client(AsyncBaseClient):
                   startCursor
                   endCursor
                 }
+                totalCount
                 edges {
                   node {
                     id
@@ -212,3 +294,109 @@ class Client(AsyncBaseClient):
         )
         data = self.get_data(response)
         return ListProducts.model_validate(data)
+
+    async def list_stocks(
+        self,
+        first: Union[Optional[int], UnsetType] = UNSET,
+        after: Union[Optional[str], UnsetType] = UNSET,
+        filter: Union[Optional[StockFilterInput], UnsetType] = UNSET,
+        **kwargs: Any
+    ) -> ListStocks:
+        query = gql(
+            """
+            query ListStocks($first: Int, $after: String, $filter: StockFilterInput) {
+              stocks(first: $first, after: $after, filter: $filter) {
+                pageInfo {
+                  hasNextPage
+                  hasPreviousPage
+                  startCursor
+                  endCursor
+                }
+                totalCount
+                edges {
+                  node {
+                    id
+                    quantity
+                    quantityAllocated
+                    warehouse {
+                      id
+                    }
+                    productVariant {
+                      id
+                      name
+                      product {
+                        id
+                        name
+                      }
+                    }
+                  }
+                }
+              }
+            }
+            """
+        )
+        variables: Dict[str, object] = {
+            "first": first,
+            "after": after,
+            "filter": filter,
+        }
+        response = await self.execute(
+            query=query, operation_name="ListStocks", variables=variables, **kwargs
+        )
+        data = self.get_data(response)
+        return ListStocks.model_validate(data)
+
+    async def warehouse_details(
+        self, id: Union[Optional[str], UnsetType] = UNSET, **kwargs: Any
+    ) -> WarehouseDetails:
+        query = gql(
+            """
+            query WarehouseDetails($id: ID) {
+              warehouse(id: $id) {
+                id
+                name
+                slug
+                address {
+                  firstName
+                  lastName
+                  streetAddress1
+                  streetAddress2
+                  city
+                  postalCode
+                }
+                clickAndCollectOption
+                shippingZones(first: 100) {
+                  edges {
+                    node {
+                      id
+                      name
+                      description
+                      channels {
+                        id
+                        slug
+                        name
+                      }
+                      countries {
+                        code
+                        country
+                      }
+                    }
+                  }
+                }
+                metadata {
+                  key
+                  value
+                }
+              }
+            }
+            """
+        )
+        variables: Dict[str, object] = {"id": id}
+        response = await self.execute(
+            query=query,
+            operation_name="WarehouseDetails",
+            variables=variables,
+            **kwargs
+        )
+        data = self.get_data(response)
+        return WarehouseDetails.model_validate(data)

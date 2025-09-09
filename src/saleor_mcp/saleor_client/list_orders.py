@@ -14,6 +14,7 @@ class ListOrders(BaseModel):
 
 class ListOrdersOrders(BaseModel):
     pageInfo: "ListOrdersOrdersPageInfo"
+    totalCount: Optional[int]
     edges: List["ListOrdersOrdersEdges"]
 
 
