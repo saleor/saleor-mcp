@@ -27,6 +27,7 @@ dev = [
     "httpx>=0.25.0",
     "ruff>=0.1.0",
     "pytest-socket>=0.7.0",
+    "ipdb>=0.13.13",
 ]
 
 [tool.ruff]
