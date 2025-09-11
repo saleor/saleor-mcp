@@ -26,4 +26,4 @@ LABEL org.opencontainers.image.title="saleor/saleor-mcp" \
     org.opencontainers.image.authors="Saleor Commerce (https://saleor.io)" \
     org.opencontainers.image.licenses="AGPL-3.0"
 
-CMD ["uvicorn", "saleor_mcp.main:app", "--host", "0.0.0.0", "--port", "8000"]
+ENTRYPOINT ["uvicorn", "saleor_mcp.main:app", "--host=0.0.0.0", "--port=8000"]
