@@ -11,6 +11,7 @@ dependencies = [
     "pydantic>=2.5.0",
     "graphql-core>=3.2.0",
     "ariadne-codegen>=0.15.2",
+    "python-json-logger>=3.3.0",
 ]
 
 [build-system]
