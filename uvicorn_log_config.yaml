@@ -1,0 +1,16 @@
+version: 1
+disable_existing_loggers: False
+formatters:
+  json:
+    (): "pythonjsonlogger.jsonlogger.JsonFormatter"
+    datefmt: "%Y-%m-%dT%H:%M:%SZ"
+    format: "%(asctime)s %(levelname)s %(lineno)s %(message)s %(name)s %(pathname)s %(process)d %(threadName)s"
+handlers:
+  default:
+    class: "logging.StreamHandler"
+    formatter: "json"
+loggers:
+  uvicorn:
+    level: "INFO"
+    handlers: [ "default" ]
+    propagate: False
