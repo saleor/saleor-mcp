@@ -37,7 +37,7 @@ async def index(request: Request):
     return HTMLResponse(content)
 
 
-app = mcp.http_app()
+app = mcp.http_app(stateless_http=True)
 
 
 def main():
