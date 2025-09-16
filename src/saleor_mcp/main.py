@@ -1,6 +1,7 @@
 from fastmcp import FastMCP
 from starlette.requests import Request
-from starlette.responses import HTMLResponse, JSONResponse
+from starlette.responses import FileResponse, JSONResponse
+from starlette.staticfiles import StaticFiles
 
 from saleor_mcp.tools import (
     channels_router,
@@ -23,25 +24,17 @@ async def health_check(request: Request):
 
 @mcp.custom_route("/", methods=["GET"])
 async def index(request: Request):
-    content = """
-        <html>
-            <head>
-                <title>Saleor MCP Server</title>
-            </head>
-            <body>
-                <h1>Saleor MCP is running</h1>
-                <p>Use the /mcp endpoint to connect to the server with Streamable HTTP transport.</p>
-            </body>
-        </html>
-        """
-    return HTMLResponse(content)
+    return FileResponse("src/saleor_mcp/static/index.html")
 
 
 app = mcp.http_app(stateless_http=True)
+app.mount("/static", StaticFiles(directory="src/saleor_mcp/static"), name="static")
 
 
 def main():
-    mcp.run(transport="http", host="127.0.0.1", port=6000)
+    import uvicorn
+
+    uvicorn.run(app, host="127.0.0.1", port=6000)
 
 
 if __name__ == "__main__":
