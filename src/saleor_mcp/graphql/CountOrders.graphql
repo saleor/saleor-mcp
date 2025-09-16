@@ -1,0 +1,5 @@
+query CountOrders($where: OrderWhereInput) {
+  orders(where: $where) {
+    totalCount
+  }
+}

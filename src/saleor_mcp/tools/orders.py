@@ -71,3 +71,42 @@ async def orders(
             "totalFetched": len(edges),
         },
     }
+
+
+@orders_router.tool(
+    annotations={
+        "title": "Fetch orders count",
+        "readOnlyHint": True,
+        "idempotentHint": True,
+        "openWorldHint": True,
+    }
+)
+async def orders_count(
+    ctx: Context,
+    where: Annotated[
+        OrderWhereInput | None, "Filter orders by specific criteria"
+    ] = None,
+) -> dict[str, Any]:
+    """Fetch total count of orders from Saleor GraphQL API.
+
+    This tool retrieves the total count of orders based on the provided filter criteria.
+
+    Args:
+        ctx (Context): The tool execution context.
+        where (OrderWhereInput | None): Filter orders by specific criteria.
+
+    """
+
+    where = where.model_dump(exclude_unset=True) if where else None
+
+    data = {}
+    client = get_saleor_client()
+    try:
+        data = await client.count_orders(where=where)
+    except Exception as e:
+        await ctx.error(str(e))
+        raise
+
+    return {
+        "data": {"totalCount": data.orders.totalCount if data and data.orders else 0}
+    }

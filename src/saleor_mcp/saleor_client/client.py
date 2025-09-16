@@ -5,6 +5,7 @@ from typing import Any, Dict, Optional, Union
 
 from .async_base_client import AsyncBaseClient
 from .base_model import UNSET, UnsetType
+from .count_orders import CountOrders
 from .input_types import (
     CustomerWhereInput,
     OrderSortingInput,
@@ -27,6 +28,25 @@ def gql(q: str) -> str:
 
 
 class Client(AsyncBaseClient):
+    async def count_orders(
+        self, where: Union[Optional[OrderWhereInput], UnsetType] = UNSET, **kwargs: Any
+    ) -> CountOrders:
+        query = gql(
+            """
+            query CountOrders($where: OrderWhereInput) {
+              orders(where: $where) {
+                totalCount
+              }
+            }
+            """
+        )
+        variables: Dict[str, object] = {"where": where}
+        response = await self.execute(
+            query=query, operation_name="CountOrders", variables=variables, **kwargs
+        )
+        data = self.get_data(response)
+        return CountOrders.model_validate(data)
+
     async def list_channels(self, **kwargs: Any) -> ListChannels:
         query = gql(
             """

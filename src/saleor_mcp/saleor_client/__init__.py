@@ -3,6 +3,7 @@
 from .async_base_client import AsyncBaseClient
 from .base_model import BaseModel, Upload
 from .client import Client
+from .count_orders import CountOrders, CountOrdersOrders
 from .enums import (
     AccountErrorCode,
     AddressTypeEnum,
@@ -685,6 +686,8 @@ __all__ = [
     "ConfigurationItemInput",
     "ConfigurationTypeFieldEnum",
     "ContainsFilterInput",
+    "CountOrders",
+    "CountOrdersOrders",
     "CountryCode",
     "CountryCodeEnumFilterInput",
     "CountryFilterInput",
