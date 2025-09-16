@@ -81,7 +81,7 @@ async def orders(
         "openWorldHint": True,
     }
 )
-async def orders_count(
+async def order_count(
     ctx: Context,
     where: Annotated[
         OrderWhereInput | None, "Filter orders by specific criteria"
