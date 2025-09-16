@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Saleor MCP Server - Model Context Protocol Implementation</title>
+    <link
+      rel="icon"
+      href="/static/favicon-32x32-dark.png"
+      type="image/png"
+      sizes="32x32"
+    />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        line-height: 1.6;
+        color: #f9fafb;
+        background: url("/static/background.svg") repeat,
+          linear-gradient(180deg, #101418, #161a1e);
+        min-height: 100vh;
+        overscroll-behavior-y: none;
+      }
+
+      .container {
+        max-width: 1024px;
+        margin: 0 auto;
+        padding: 3rem 1rem;
+      }
+
+      .header {
+        text-align: center;
+        margin-bottom: 4rem;
+      }
+
+      .header-content {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .logo {
+        width: 2.5rem;
+        height: 2.5rem;
+        object-fit: contain;
+      }
+
+      .main-title {
+        font-size: 2.25rem;
+        font-weight: bold;
+        color: #f9fafb;
+        text-wrap: balance;
+      }
+
+      .subtitle {
+        font-size: 1.25rem;
+        color: #9ca3af;
+        text-wrap: balance;
+        max-width: 32rem;
+        margin: 0 auto;
+      }
+
+      .card {
+        background: rgba(45, 55, 72, 0.5);
+        border: 1px solid rgba(75, 85, 99, 0.5);
+        border-radius: 0.75rem;
+        margin-bottom: 3rem;
+        backdrop-filter: blur(4px);
+      }
+
+      .card-header {
+        padding: 1.5rem 1.5rem 0;
+      }
+
+      .card-title {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #f9fafb;
+        margin-bottom: 0.5rem;
+      }
+
+      .card-description {
+        font-size: 1rem;
+        color: #9ca3af;
+      }
+
+      .card-content {
+        padding: 1.5rem;
+      }
+
+      .card-content p {
+        color: #f9fafb;
+        line-height: 1.7;
+        margin-bottom: 1rem;
+      }
+
+      .highlight-box {
+        background: rgba(75, 85, 99, 0.2);
+        border: 1px solid rgba(75, 85, 99, 0.3);
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin: 1rem 0;
+      }
+
+      .highlight-box p {
+        font-weight: 500;
+        margin-bottom: 0.75rem;
+      }
+
+      .highlight-list {
+        list-style: none;
+        padding: 0;
+      }
+
+      .highlight-list li {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #9ca3af;
+        margin-bottom: 0.5rem;
+      }
+
+      .icon {
+        width: 1.5rem;
+        height: 1.5rem;
+        color: #059669;
+      }
+
+      .icon-sm {
+        width: 1rem;
+        height: 1rem;
+        color: #059669;
+      }
+
+      .button-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        margin: 1rem 0;
+      }
+
+      @media (min-width: 640px) {
+        .button-group {
+          flex-direction: row;
+        }
+      }
+
+      .button {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.5rem;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.2s;
+        border: none;
+        cursor: pointer;
+      }
+
+      .button-primary {
+        background: #059669;
+        color: white;
+      }
+
+      .button-primary:hover {
+        background: #047857;
+      }
+
+      .button-outline {
+        background: transparent;
+        color: #f9fafb;
+        border: 1px solid #4b5563;
+      }
+
+      .button-outline:hover {
+        background: rgba(75, 85, 99, 0.2);
+      }
+
+      .note-box {
+        background: rgba(75, 85, 99, 0.1);
+        border: 1px solid rgba(75, 85, 99, 0.3);
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin-top: 1rem;
+      }
+
+      .note-box p {
+        font-size: 0.875rem;
+        color: #9ca3af;
+        margin: 0;
+      }
+
+      .accordion {
+        margin-top: 1.5rem;
+      }
+
+      .accordion-item {
+        border: 1px solid rgba(75, 85, 99, 0.3);
+        border-radius: 0.5rem;
+        margin-bottom: 0.5rem;
+        background: rgba(75, 85, 99, 0.05);
+      }
+
+      .accordion-trigger {
+        width: 100%;
+        padding: 1rem;
+        background: none;
+        border: none;
+        color: #f9fafb;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 1rem;
+      }
+
+      .accordion-trigger:hover {
+        background: rgba(75, 85, 99, 0.1);
+      }
+
+      .accordion-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        text-align: left;
+      }
+
+      .badge {
+        background: #374151;
+        color: #d1d5db;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        font-family: "Courier New", monospace;
+        font-size: 0.75rem;
+      }
+
+      .tool-name {
+        font-weight: 500;
+      }
+
+      .chevron {
+        width: 1rem;
+        height: 1rem;
+        transition: transform 0.2s;
+      }
+
+      .chevron.open {
+        transform: rotate(180deg);
+      }
+
+      .accordion-content {
+        padding: 0 1rem 1rem;
+        display: none;
+      }
+
+      .accordion-content.open {
+        display: block;
+      }
+
+      .tool-description {
+        color: #f9fafb;
+        line-height: 1.7;
+        margin-bottom: 1rem;
+      }
+
+      .args-section h4 {
+        font-weight: 500;
+        color: #f9fafb;
+        margin-bottom: 0.5rem;
+      }
+
+      .args-list {
+        list-style: none;
+        padding: 0;
+      }
+
+      .args-list li {
+        font-size: 0.875rem;
+        color: #9ca3af;
+        font-family: "Courier New", monospace;
+        background: rgba(75, 85, 99, 0.2);
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        margin-bottom: 0.25rem;
+      }
+
+      .no-args {
+        font-size: 0.875rem;
+        color: #9ca3af;
+        font-style: italic;
+      }
+
+      .footer {
+        text-align: center;
+        margin-top: 4rem;
+        padding-top: 2rem;
+        border-top: 1px solid rgba(75, 85, 99, 0.3);
+      }
+
+      .footer p {
+        color: #9ca3af;
+        font-size: 0.875rem;
+      }
+
+      .footer a {
+        color: #059669;
+        text-decoration: none;
+      }
+
+      .footer a:hover {
+        color: #047857;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <!-- Header -->
+      <div class="header">
+        <div class="header-content">
+          <img src="/static/saleor-logo.png" alt="Saleor Logo" class="logo" />
+          <h1 class="main-title">Saleor MCP Server</h1>
+        </div>
+        <p class="subtitle">
+          A Model Context Protocol implementation for interacting with Saleor
+          e-commerce platform
+        </p>
+      </div>
+
+      <!-- Introduction Section -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">
+            <svg
+              class="icon"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+              />
+            </svg>
+            Welcome to Saleor MCP
+          </h2>
+          <p class="card-description">
+            Transform how you interact with your Saleor store data
+          </p>
+        </div>
+        <div class="card-content">
+          <p>
+            The Model Context Protocol (MCP) is a way to plug Saleor's API into
+            an LLM, letting you ask questions about your store data in the
+            context of the LLM itself. This lets you take an agent that you
+            already use, like Cursor, and pull in additional information from
+            Saleor to help with tasks like business analysis, inventory
+            management, and customer insights.
+          </p>
+
+          <div class="highlight-box">
+            <p>
+              Connecting Saleor to LLMs allows you to easily get answers to
+              questions like:
+            </p>
+            <ul class="highlight-list">
+              <li>
+                <svg
+                  class="icon-sm"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+                  />
+                </svg>
+                "Which products are running low on stock?"
+              </li>
+              <li>
+                <svg
+                  class="icon-sm"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"
+                  />
+                </svg>
+                "Customer insights from this month"
+              </li>
+              <li>
+                <svg
+                  class="icon-sm"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                  />
+                </svg>
+                "Show recent orders that need attention"
+              </li>
+            </ul>
+          </div>
+
+          <p>
+            This provides an easy interface to learn insights about your Saleor
+            store without needing to navigate through different dashboards or
+            write complex queries.
+          </p>
+        </div>
+      </div>
+
+      <!-- Getting Started Section -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">
+            <svg class="icon" fill="currentColor" viewBox="0 0 24 24">
+              <path
+                d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"
+              />
+            </svg>
+            Getting Started
+          </h2>
+          <p class="card-description">
+            Quick setup guide to get you up and running
+          </p>
+        </div>
+        <div class="card-content">
+          <p>
+            To get started with the Saleor MCP server, visit our GitHub
+            repository which contains detailed installation instructions,
+            configuration guides, and examples.
+          </p>
+
+          <div class="button-group">
+            <a
+              href="https://github.com/saleor/saleor-mcp/"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="button button-primary"
+            >
+              <svg class="icon-sm" fill="currentColor" viewBox="0 0 24 24">
+                <path
+                  d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"
+                />
+              </svg>
+              View on GitHub
+              <svg
+                class="icon-sm"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                />
+              </svg>
+            </a>
+          </div>
+
+          <div class="note-box">
+            <p>
+              <strong>Note:</strong> The repository includes setup instructions
+              for various MCP clients, authentication configuration, and example
+              usage scenarios.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Available Tools Section -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">
+            <svg
+              class="icon"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M13 10V3L4 14h7v7l9-11h-7z"
+              />
+            </svg>
+            Available Tools
+          </h2>
+          <p class="card-description">
+            Pre-configured functions for common Saleor operations
+          </p>
+        </div>
+        <div class="card-content">
+          <p>
+            Tools are pre-configured functions that can be used to help with
+            common tasks. Each tool provides specific functionality for
+            interacting with your Saleor store data.
+          </p>
+
+          <div class="accordion">
+            <!-- Channels Tool -->
+            <div class="accordion-item">
+              <button class="accordion-trigger" onclick="toggleAccordion(this)">
+                <div class="accordion-header">
+                  <span class="badge">channels</span>
+                  <span class="tool-name">Channels</span>
+                </div>
+                <svg
+                  class="chevron"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+              <div class="accordion-content">
+                <p class="tool-description">
+                  Fetch the list of channels from Saleor. This tools retrieves
+                  the list of channels. For each channel it returns information
+                  such as: ID, name, slug, currency code, default country,
+                  whether the channel is active, and the list of warehouses.
+                </p>
+                <div class="no-args">No additional arguments required</div>
+              </div>
+            </div>
+
+            <!-- Orders Tool -->
+            <div class="accordion-item">
+              <button class="accordion-trigger" onclick="toggleAccordion(this)">
+                <div class="accordion-header">
+                  <span class="badge">orders</span>
+                  <span class="tool-name">Orders</span>
+                </div>
+                <svg
+                  class="chevron"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+              <div class="accordion-content">
+                <p class="tool-description">
+                  Fetch list of orders from Saleor GraphQL API. This tool
+                  retrieves the list of orders. For each order it returns
+                  information such as: ID, number, status, creation date, last
+                  update date, payment status, user email, total amount,
+                  shipping address, billing address, order lines which include:
+                  quantity, product SKU, variant name, product ID, product name,
+                  unit price.
+                </p>
+                <div class="args-section">
+                  <h4>Arguments:</h4>
+                  <ul class="args-list">
+                    <li>
+                      first: Number of orders to fetch (max 100 per request).
+                    </li>
+                    <li>
+                      after: Cursor for pagination - fetch orders after this
+                      cursor.
+                    </li>
+                    <li>sort_by: Sort orders by specific field.</li>
+                    <li>where: Filter orders by specific criteria.</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <!-- Order Count Tool -->
+            <div class="accordion-item">
+              <button class="accordion-trigger" onclick="toggleAccordion(this)">
+                <div class="accordion-header">
+                  <span class="badge">order_count</span>
+                  <span class="tool-name">Order Count</span>
+                </div>
+                <svg
+                  class="chevron"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+              <div class="accordion-content">
+                <p class="tool-description">
+                  Fetch total count of orders from Saleor GraphQL API. This tool
+                  retrieves the total count of orders based on the provided
+                  filter criteria.
+                </p>
+                <div class="args-section">
+                  <h4>Arguments:</h4>
+                  <ul class="args-list">
+                    <li>where: Filter orders by specific criteria/</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <!-- Products Tool -->
+            <div class="accordion-item">
+              <button class="accordion-trigger" onclick="toggleAccordion(this)">
+                <div class="accordion-header">
+                  <span class="badge">products</span>
+                  <span class="tool-name">Products</span>
+                </div>
+                <svg
+                  class="chevron"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+              <div class="accordion-content">
+                <p class="tool-description">
+                  Fetch list of products from Saleor GraphQL API. This tool
+                  retrieves product information such as: ID, name, slug,
+                  external reference, product type, category, date of creation,
+                  date of last update, and pricing. Products are channel-aware,
+                  meaning that their availability and pricing can vary based on
+                  the specified channel. If a channel is provided, the tool will
+                  fetch product data specific to that channel. Otherwise, it
+                  will return general product data.
+                </p>
+                <div class="args-section">
+                  <h4>Arguments:</h4>
+                  <ul class="args-list">
+                    <li>
+                      first: Number of products to fetch (max 100 per request).
+                    </li>
+                    <li>
+                      after: Cursor for pagination - fetch products after this
+                      cursor.
+                    </li>
+                    <li>
+                      channel: Slug of a channel for which the data should be
+                      returned. If not provided, general product data is
+                      returned.
+                    </li>
+                    <li>sort_by: Sort products by specific field.</li>
+                    <li>where: Filter products by specific criteria.</li>
+                    <li>search: Search products with full-text search.</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <!-- Stocks Tool -->
+            <div class="accordion-item">
+              <button class="accordion-trigger" onclick="toggleAccordion(this)">
+                <div class="accordion-header">
+                  <span class="badge">stocks</span>
+                  <span class="tool-name">Stocks</span>
+                </div>
+                <svg
+                  class="chevron"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+              <div class="accordion-content">
+                <p class="tool-description">
+                  Fetch list of stocks from Saleor GraphQL API. This tool
+                  retrieves stock information such as: ID, quantity, allocated
+                  quantity, warehouse information, and associated product
+                  variant details.
+                </p>
+                <div class="args-section">
+                  <h4>Arguments:</h4>
+                  <ul class="args-list">
+                    <li>
+                      first: Number of products to fetch (max 100 per request).
+                    </li>
+                    <li>
+                      after: Cursor for pagination - fetch products after this
+                      cursor.
+                    </li>
+                    <li>filter: Filter stocks by specific criteria.</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <!-- Warehouse Details Tool -->
+            <div class="accordion-item">
+              <button class="accordion-trigger" onclick="toggleAccordion(this)">
+                <div class="accordion-header">
+                  <span class="badge">warehouse_details</span>
+                  <span class="tool-name">Warehouse Details</span>
+                </div>
+                <svg
+                  class="chevron"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+              <div class="accordion-content">
+                <p class="tool-description">
+                  Fetch warehouse details from Saleor GraphQL API. This tool
+                  retrieves detailed warehouse information including: ID, name,
+                  slug, address details, click and collect options, associated
+                  shipping zones with their channels and countries, and
+                  metadata.
+                </p>
+                <div class="args-section">
+                  <h4>Arguments:</h4>
+                  <ul class="args-list">
+                    <li>id: The ID of the warehouse to fetch details for.</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="footer">
+        <p>
+          Built with ❤️ and 🤖 for by
+          <a href="https://saleor.io/" target="_blank" rel="noopener noreferrer"
+            >Saleor Commerce</a
+          >.
+        </p>
+      </div>
+    </div>
+
+    <script>
+      function toggleAccordion(trigger) {
+        const content = trigger.nextElementSibling;
+        const chevron = trigger.querySelector(".chevron");
+        const isOpen = content.classList.contains("open");
+
+        // Close all other accordions
+        document.querySelectorAll(".accordion-content.open").forEach((item) => {
+          if (item !== content) {
+            item.classList.remove("open");
+            item.previousElementSibling
+              .querySelector(".chevron")
+              .classList.remove("open");
+          }
+        });
+
+        // Toggle current accordion
+        if (isOpen) {
+          content.classList.remove("open");
+          chevron.classList.remove("open");
+        } else {
+          content.classList.add("open");
+          chevron.classList.add("open");
+        }
+      }
+    </script>
+  </body>
+</html>
