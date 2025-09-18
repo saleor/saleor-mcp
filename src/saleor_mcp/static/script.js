@@ -22,3 +22,13 @@ function toggleAccordion(trigger) {
     chevron.classList.add("open");
   }
 }
+
+// Initialize event listeners when the DOM is loaded
+document.addEventListener("DOMContentLoaded", function () {
+  // Add click event listeners to all accordion triggers
+  document.querySelectorAll(".accordion-trigger").forEach((trigger) => {
+    trigger.addEventListener("click", function () {
+      toggleAccordion(this);
+    });
+  });
+});
