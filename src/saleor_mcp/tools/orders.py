@@ -1,11 +1,20 @@
-from typing import Annotated, Any
+from typing import Annotated, Any, Optional
 
 from fastmcp import Context, FastMCP
 
 from ..ctx_utils import get_saleor_client
-from ..saleor_client.input_types import OrderSortingInput, OrderWhereInput
+from ..saleor_client.base_model import BaseModel
+from ..saleor_client.input_types import (
+    DateTimeRangeInput,
+    OrderSortingInput,
+)
 
 orders_router = FastMCP("Orders MCP")
+
+
+class OrderWhereInput(BaseModel):
+    createdAt: Optional["DateTimeRangeInput"] = None
+    updatedAt: Optional["DateTimeRangeInput"] = None
 
 
 @orders_router.tool(
@@ -30,6 +39,7 @@ async def orders(
     where: Annotated[
         OrderWhereInput | None, "Filter orders by specific criteria"
     ] = None,
+    search: Annotated[str | None, "Search orders by term"] = None,
 ) -> dict[str, Any]:
     """Fetch list of orders from Saleor GraphQL API.
 
@@ -44,6 +54,8 @@ async def orders(
         after (str | None): Cursor for pagination - fetch orders after this cursor.
         sort_by (OrderSortingInput | None): Sort orders by specific field.
         where (OrderWhereInput | None): Filter orders by specific criteria.
+        search (str | None): Search orders by term such as order number, ID, user
+            email, first name, or last name or address.
 
     """
 

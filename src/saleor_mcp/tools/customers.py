@@ -1,11 +1,20 @@
-from typing import Annotated, Any
+from typing import Annotated, Any, Optional
 
 from fastmcp import Context, FastMCP
 
 from ..ctx_utils import get_saleor_client
-from ..saleor_client.input_types import CustomerWhereInput, UserSortingInput
+from ..saleor_client.base_model import BaseModel
+from ..saleor_client.input_types import (
+    DateTimeRangeInput,
+    UserSortingInput,
+)
 
 customers_router = FastMCP("Customers MCP")
+
+
+class CustomerWhereInput(BaseModel):
+    dateJoined: Optional["DateTimeRangeInput"] = None
+    updatedAt: Optional["DateTimeRangeInput"] = None
 
 
 @customers_router.tool(
