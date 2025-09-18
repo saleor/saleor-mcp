@@ -24,7 +24,20 @@ async def health_check(request: Request):
 
 @mcp.custom_route("/", methods=["GET"])
 async def index(request: Request):
-    return FileResponse("src/saleor_mcp/static/index.html")
+    csp_policies = (
+        "default-src 'none'",
+        "base-uri 'none'",
+        "frame-ancestors 'none'",
+        "form-action 'none'",
+        "script-src 'self'",
+        "style-src 'self'",
+        "img-src 'self'",
+        "font-src 'self'",
+    )
+    return FileResponse(
+        "src/saleor_mcp/static/index.html",
+        headers={"Content-Security-Policy": "; ".join(csp_policies)},
+    )
 
 
 app = mcp.http_app(stateless_http=True)
