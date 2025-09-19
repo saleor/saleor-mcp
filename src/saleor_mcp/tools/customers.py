@@ -30,6 +30,9 @@ async def customers(
     first: Annotated[
         int | None, "Number of customers to fetch (max 100 per request)"
     ] = 100,
+    after: Annotated[
+        str | None, "Cursor for pagination - fetch customers after this cursor"
+    ] = None,
     sortBy: Annotated[
         UserSortingInput | None, "Sort customers by specific field"
     ] = None,
@@ -54,6 +57,7 @@ async def customers(
     try:
         data = await client.list_customers(
             first=first,
+            after=after,
             sortBy=sort_by,
             where=where_data,
             search=search,

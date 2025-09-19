@@ -249,6 +249,47 @@
               </div>
             </div>
 
+            <!-- Customers Tool -->
+            <div class="accordion-item">
+              <button class="accordion-trigger">
+                <div class="accordion-header">
+                  <span class="badge">customers</span>
+                  <span class="tool-name">Customers</span>
+                </div>
+                <svg
+                  class="chevron"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+              <div class="accordion-content">
+                <p class="tool-description">
+                  Fetch list of customers from Saleor GraphQL API. This tool
+                  retrieves customer information such as: ID, email, first name,
+                  last name, active status, confirmation status, checkout and
+                  order counts, language code, last login, date joined, and
+                  default shipping/billing addresses.
+                </p>
+                <li>
+                  first: Number of customers to fetch (max 100 per request).
+                </li>
+                <li>
+                  after: Cursor for pagination - fetch customers after this
+                  cursor.
+                </li>
+                <li>sort_by: Sort customers by specific field.</li>
+                <li>where: Filter customers by specific criteria.</li>
+              </div>
+            </div>
+
             <!-- Orders Tool -->
             <div class="accordion-item">
               <button class="accordion-trigger">
@@ -381,7 +422,6 @@
                       returned.
                     </li>
                     <li>sort_by: Sort products by specific field.</li>
-                    <li>where: Filter products by specific criteria.</li>
                     <li>search: Search products with full-text search.</li>
                   </ul>
                 </div>

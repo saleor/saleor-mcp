@@ -78,6 +78,7 @@ class Client(AsyncBaseClient):
     async def list_customers(
         self,
         first: Union[Optional[int], UnsetType] = UNSET,
+        after: Union[Optional[str], UnsetType] = UNSET,
         sortBy: Union[Optional[UserSortingInput], UnsetType] = UNSET,
         where: Union[Optional[CustomerWhereInput], UnsetType] = UNSET,
         search: Union[Optional[str], UnsetType] = UNSET,
@@ -85,8 +86,14 @@ class Client(AsyncBaseClient):
     ) -> ListCustomers:
         query = gql(
             """
-            query ListCustomers($first: Int, $sortBy: UserSortingInput, $where: CustomerWhereInput, $search: String) {
-              customers(first: $first, sortBy: $sortBy, where: $where, search: $search) {
+            query ListCustomers($first: Int, $after: String, $sortBy: UserSortingInput, $where: CustomerWhereInput, $search: String) {
+              customers(
+                first: $first
+                after: $after
+                sortBy: $sortBy
+                where: $where
+                search: $search
+              ) {
                 pageInfo {
                   hasNextPage
                   hasPreviousPage
@@ -139,6 +146,7 @@ class Client(AsyncBaseClient):
         )
         variables: Dict[str, object] = {
             "first": first,
+            "after": after,
             "sortBy": sortBy,
             "where": where,
             "search": search,
