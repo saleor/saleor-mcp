@@ -8,6 +8,7 @@ from fastmcp.server.dependencies import get_http_headers
 
 LOGLEVEL = os.environ.get("LOGLEVEL", "INFO").upper()
 logging.basicConfig(level=LOGLEVEL)
+logging.getLogger("mcp.server.streamable_http").setLevel(logging.WARNING)
 
 
 def validate_api_url(url, pattern):

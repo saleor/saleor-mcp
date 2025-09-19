@@ -1,11 +1,20 @@
-from typing import Annotated, Any
+from typing import Annotated, Any, Optional
 
 from fastmcp import Context, FastMCP
 
 from ..ctx_utils import get_saleor_client
-from ..saleor_client.input_types import CustomerWhereInput, UserSortingInput
+from ..saleor_client.base_model import BaseModel
+from ..saleor_client.input_types import (
+    DateTimeRangeInput,
+    UserSortingInput,
+)
 
 customers_router = FastMCP("Customers MCP")
+
+
+class CustomerWhereInput(BaseModel):
+    dateJoined: Optional["DateTimeRangeInput"] = None
+    updatedAt: Optional["DateTimeRangeInput"] = None
 
 
 @customers_router.tool(
@@ -21,6 +30,9 @@ async def customers(
     first: Annotated[
         int | None, "Number of customers to fetch (max 100 per request)"
     ] = 100,
+    after: Annotated[
+        str | None, "Cursor for pagination - fetch customers after this cursor"
+    ] = None,
     sortBy: Annotated[
         UserSortingInput | None, "Sort customers by specific field"
     ] = None,
@@ -45,6 +57,7 @@ async def customers(
     try:
         data = await client.list_customers(
             first=first,
+            after=after,
             sortBy=sort_by,
             where=where_data,
             search=search,

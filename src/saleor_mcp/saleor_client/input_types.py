@@ -107,30 +107,6 @@ class EventDeliveryFilterInput(BaseModel):
     eventType: Optional[WebhookEventTypeEnum] = None
 
 
-class AttributeChoicesSortingInput(BaseModel):
-    direction: OrderDirection
-    field: AttributeChoicesSortField
-
-
-class AttributeValueFilterInput(BaseModel):
-    search: Optional[str] = None
-    ids: Optional[List[str]] = None
-    slugs: Optional[List[str]] = None
-
-
-class AttributeValueWhereInput(BaseModel):
-    ids: Optional[List[str]] = None
-    name: Optional["StringFilterInput"] = None
-    slug: Optional["StringFilterInput"] = None
-    AND: Optional[List["AttributeValueWhereInput"]] = None
-    OR: Optional[List["AttributeValueWhereInput"]] = None
-
-
-class StringFilterInput(BaseModel):
-    eq: Optional[str] = None
-    oneOf: Optional[List[str]] = None
-
-
 class AttributeFilterInput(BaseModel):
     valueRequired: Optional[bool] = None
     isVariantOnly: Optional[bool] = None
@@ -172,6 +148,11 @@ class AttributeWhereInput(BaseModel):
     OR: Optional[List["AttributeWhereInput"]] = None
 
 
+class StringFilterInput(BaseModel):
+    eq: Optional[str] = None
+    oneOf: Optional[List[str]] = None
+
+
 class AttributeInputTypeEnumFilterInput(BaseModel):
     eq: Optional[AttributeInputTypeEnum] = None
     oneOf: Optional[List[AttributeInputTypeEnum]] = None
@@ -190,6 +171,25 @@ class AttributeTypeEnumFilterInput(BaseModel):
 class MeasurementUnitsEnumFilterInput(BaseModel):
     eq: Optional[MeasurementUnitsEnum] = None
     oneOf: Optional[List[MeasurementUnitsEnum]] = None
+
+
+class AttributeChoicesSortingInput(BaseModel):
+    direction: OrderDirection
+    field: AttributeChoicesSortField
+
+
+class AttributeValueFilterInput(BaseModel):
+    search: Optional[str] = None
+    ids: Optional[List[str]] = None
+    slugs: Optional[List[str]] = None
+
+
+class AttributeValueWhereInput(BaseModel):
+    ids: Optional[List[str]] = None
+    name: Optional["StringFilterInput"] = None
+    slug: Optional["StringFilterInput"] = None
+    AND: Optional[List["AttributeValueWhereInput"]] = None
+    OR: Optional[List["AttributeValueWhereInput"]] = None
 
 
 class ProductFilterInput(BaseModel):
@@ -1098,6 +1098,10 @@ class TimePeriodInputType(BaseModel):
     type: TimePeriodTypeEnum
 
 
+class RefundSettingsUpdateInput(BaseModel):
+    refundReasonReferenceType: str
+
+
 class ShippingMethodChannelListingInput(BaseModel):
     addChannels: Optional[List["ShippingMethodChannelListingAddInput"]] = None
     removeChannels: Optional[List[str]] = None
@@ -1785,6 +1789,7 @@ class OrderReturnFulfillmentLineInput(BaseModel):
 class OrderGrantRefundCreateInput(BaseModel):
     amount: Optional[Any] = None
     reason: Optional[str] = None
+    reasonReference: Optional[str] = None
     lines: Optional[List["OrderGrantRefundCreateLineInput"]] = None
     grantRefundForShipping: Optional[bool] = None
     transactionId: str
@@ -1799,6 +1804,7 @@ class OrderGrantRefundCreateLineInput(BaseModel):
 class OrderGrantRefundUpdateInput(BaseModel):
     amount: Optional[Any] = None
     reason: Optional[str] = None
+    reasonReference: Optional[str] = None
     addLines: Optional[List["OrderGrantRefundUpdateLineAddInput"]] = None
     removeLines: Optional[List[str]] = None
     grantRefundForShipping: Optional[bool] = None
@@ -2370,6 +2376,7 @@ class AttributeCreateInput(BaseModel):
     storefrontSearchPosition: Optional[int] = None
     availableInGrid: Optional[bool] = None
     externalReference: Optional[str] = None
+    referenceTypes: Optional[List[str]] = None
 
 
 class AttributeValueCreateInput(BaseModel):
@@ -2396,6 +2403,7 @@ class AttributeUpdateInput(BaseModel):
     storefrontSearchPosition: Optional[int] = None
     availableInGrid: Optional[bool] = None
     externalReference: Optional[str] = None
+    referenceTypes: Optional[List[str]] = None
 
 
 class AttributeValueUpdateInput(BaseModel):
@@ -2553,9 +2561,9 @@ class PermissionGroupUpdateInput(BaseModel):
     restrictedAccessToChannels: Optional[bool] = None
 
 
-AttributeValueWhereInput.model_rebuild()
 AttributeFilterInput.model_rebuild()
 AttributeWhereInput.model_rebuild()
+AttributeValueWhereInput.model_rebuild()
 ProductFilterInput.model_rebuild()
 AttributeInput.model_rebuild()
 AssignedAttributeValueInput.model_rebuild()

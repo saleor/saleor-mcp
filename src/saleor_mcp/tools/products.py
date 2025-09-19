@@ -5,7 +5,6 @@ from fastmcp import Context, FastMCP
 from ..ctx_utils import get_saleor_client
 from ..saleor_client.input_types import (
     ProductOrder,
-    ProductWhereInput,
     StockFilterInput,
 )
 
@@ -33,9 +32,6 @@ async def products(
         "Slug of a channel for which the data should be returned. If not provided, "
         "general product data is returned.",
     ] = None,
-    where: Annotated[
-        ProductWhereInput | None, "Filter products by specific criteria"
-    ] = None,
     sortBy: Annotated[ProductOrder | None, "Sort products by specific field"] = None,
     search: Annotated[str | None, "Search products with full-text search"] = None,
 ) -> dict[str, Any]:
@@ -51,7 +47,6 @@ async def products(
 
     """
 
-    where = where.model_dump(exclude_unset=True) if where else None
     sort_by = sortBy.model_dump(exclude_unset=True) if sortBy else None
 
     data = {}
@@ -61,7 +56,6 @@ async def products(
             first=first,
             after=after,
             channel=channel,
-            where=where,
             sortBy=sort_by,
             search=search,
         )

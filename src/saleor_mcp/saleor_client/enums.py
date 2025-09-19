@@ -1731,6 +1731,17 @@ class AttributeEntityTypeEnum(str, Enum):
     COLLECTION = "COLLECTION"
 
 
+class ProductTypeKindEnum(str, Enum):
+    NORMAL = "NORMAL"
+    GIFT_CARD = "GIFT_CARD"
+
+
+class VariantAttributeScope(str, Enum):
+    ALL = "ALL"
+    VARIANT_SELECTION = "VARIANT_SELECTION"
+    NOT_VARIANT_SELECTION = "NOT_VARIANT_SELECTION"
+
+
 class AttributeTypeEnum(str, Enum):
     PRODUCT_TYPE = "PRODUCT_TYPE"
     PAGE_TYPE = "PAGE_TYPE"
@@ -1776,17 +1787,6 @@ class MeasurementUnitsEnum(str, Enum):
 class AttributeChoicesSortField(str, Enum):
     NAME = "NAME"
     SLUG = "SLUG"
-
-
-class ProductTypeKindEnum(str, Enum):
-    NORMAL = "NORMAL"
-    GIFT_CARD = "GIFT_CARD"
-
-
-class VariantAttributeScope(str, Enum):
-    ALL = "ALL"
-    VARIANT_SELECTION = "VARIANT_SELECTION"
-    NOT_VARIANT_SELECTION = "NOT_VARIANT_SELECTION"
 
 
 class StockAvailability(str, Enum):
@@ -2541,6 +2541,12 @@ class GiftCardSettingsErrorCode(str, Enum):
     GRAPHQL_ERROR = "GRAPHQL_ERROR"
 
 
+class RefundSettingsErrorCode(str, Enum):
+    INVALID = "INVALID"
+    REQUIRED = "REQUIRED"
+    GRAPHQL_ERROR = "GRAPHQL_ERROR"
+
+
 class ShippingErrorCode(str, Enum):
     ALREADY_EXISTS = "ALREADY_EXISTS"
     GRAPHQL_ERROR = "GRAPHQL_ERROR"
@@ -2689,6 +2695,7 @@ class TransactionUpdateErrorCode(str, Enum):
 
 class TransactionRequestActionErrorCode(str, Enum):
     INVALID = "INVALID"
+    REQUIRED = "REQUIRED"
     GRAPHQL_ERROR = "GRAPHQL_ERROR"
     NOT_FOUND = "NOT_FOUND"
     MISSING_TRANSACTION_ACTION_REQUEST_WEBHOOK = (
