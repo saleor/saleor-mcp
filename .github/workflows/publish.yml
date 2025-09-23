@@ -62,11 +62,6 @@ jobs:
           cache-from: type=gha,scope=buildkit-master
           cache-to: type=gha,scope=buildkit-master
 
-  deploy:
-    runs-on: ubuntu-24.04
-    needs:
-      - publish
-    steps:
       - name: Trigger staging deployment
         run: |
           set -x
