@@ -1,4 +1,4 @@
-name: Publish image
+name: Publish image and deploy to staging
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
 
 jobs:
   publish:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     permissions:
       id-token: write # needed by aws-actions/configure-aws-credentials
       contents: read
@@ -61,3 +61,24 @@ jobs:
           tags: ${{ env.IMAGE_TAGS }}
           cache-from: type=gha,scope=buildkit-master
           cache-to: type=gha,scope=buildkit-master
+
+  deploy:
+    runs-on: ubuntu-24.04
+    needs:
+      - publish
+    steps:
+      - name: Trigger staging deployment
+        run: |
+          set -x
+
+          export GITHUB_TOKEN=$( \
+            curl --request GET --url ${{ secrets.VAULT_URL}} --header "Authorization: JWT ${{ secrets.VAULT_JWT }}" | jq -r .token \
+          )
+
+          gh api /repos/saleor/saleor-cloud-deployments/dispatches \
+            --input - <<< '{
+              "event_type": "saleor-mcp-staging",
+              "client_payload": {
+                "image_tag": "${{ env.UNIQUE_IMAGE_TAG }}"
+              }
+            }'
