@@ -78,5 +78,6 @@ jobs:
                 "image_tag": $image_tag
               }
             }'
+          )
 
           gh api /repos/saleor/saleor-cloud-deployments/dispatches --input <(echo "$payload")
