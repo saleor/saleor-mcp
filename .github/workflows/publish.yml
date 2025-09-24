@@ -19,31 +19,32 @@ jobs:
         uses: actions/checkout@v5
       
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392 # v3.6.0
         with:
-          platforms: all
+          platforms: arm64
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
         with:
           install: true
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
         with:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_STAGING_ACCOUNT_ID }}:role/${{ secrets.AWS_APPS_SALEOR_MCP_STAGING_CICD_ROLE_NAME }}
           aws-region: ${{ env.AWS_REGION }}
 
       - id: ecr-login
         name: Login to Amazon ECR
-        uses: aws-actions/amazon-ecr-login@v2
+        uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076 # v2.0.1
         with:
           registries: ${{ secrets.AWS_ECR_ACCOUNT }}
 
       - name: Evaluate image tags
+        env:
+          IMAGE_REPOSITORY: ${{ steps.ecr-login.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}
+          BRANCH_IMAGE_TAG: ${{ github.ref_name }}
         run: |
-          IMAGE_REPOSITORY=${{ steps.ecr-login.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}
-          BRANCH_IMAGE_TAG=${{ github.ref_name }}
           UNIQUE_IMAGE_TAG=${BRANCH_IMAGE_TAG}-$(git rev-parse --short HEAD)
 
           IMAGE_TAGS=${IMAGE_REPOSITORY}:${BRANCH_IMAGE_TAG},${IMAGE_REPOSITORY}:${UNIQUE_IMAGE_TAG}
@@ -64,16 +65,18 @@ jobs:
 
       - name: Trigger staging deployment
         run: |
-          set -x
-
           export GITHUB_TOKEN=$( \
             curl --request GET --url ${{ secrets.VAULT_URL}} --header "Authorization: JWT ${{ secrets.VAULT_JWT }}" | jq -r .token \
           )
 
-          gh api /repos/saleor/saleor-cloud-deployments/dispatches \
-            --input - <<< '{
+          echo "::add-mask::$GITHUB_TOKEN"
+
+          payload=$(
+            jq --arg image_tag "$UNIQUE_IMAGE_TAG" -n '{
               "event_type": "saleor-mcp-staging",
               "client_payload": {
-                "image_tag": "${{ env.UNIQUE_IMAGE_TAG }}"
+                "image_tag": $image_tag
               }
             }'
+
+          gh api /repos/saleor/saleor-cloud-deployments/dispatches --input <(echo "$payload")
