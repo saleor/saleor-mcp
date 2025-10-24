@@ -12,6 +12,7 @@ dependencies = [
     "graphql-core>=3.2.0",
     "ariadne-codegen>=0.15.2",
     "python-json-logger>=3.3.0",
+    "jinja2>=3.1.0",
 ]
 
 [build-system]
@@ -20,6 +21,7 @@ build-backend = "uv_build"
 
 [project.scripts]
 saleor-mcp = "saleor_mcp.main:main"
+generate-docs = "saleor_mcp.generate_docs:main"
 
 [dependency-groups]
 dev = [
