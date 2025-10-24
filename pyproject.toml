@@ -1,6 +1,6 @@
 [project]
 name = "saleor-mcp"
-version = "0.1.0"
+version = "0.1.1"
 description = "MCP server for Saleor Commerce"
 readme = "README.md"
 requires-python = ">=3.12"
