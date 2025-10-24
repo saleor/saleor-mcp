@@ -21,7 +21,6 @@ build-backend = "uv_build"
 
 [project.scripts]
 saleor-mcp = "saleor_mcp.main:main"
-generate-docs = "saleor_mcp.generate_docs:main"
 
 [dependency-groups]
 dev = [
