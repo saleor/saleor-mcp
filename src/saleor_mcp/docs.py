@@ -72,7 +72,7 @@ def generate_html(output_path: str | None = None) -> str:
     if output_path:
         output_file = Path(output_path)
         output_file.write_text(html_content, encoding="utf-8")
-        print(f"Generated HTML documentation at: {output_file}")
+        logger.info("Generated HTML documentation at: %s", output_file)
 
     return html_content
 
