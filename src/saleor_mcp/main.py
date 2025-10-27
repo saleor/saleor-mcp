@@ -1,9 +1,10 @@
 from fastmcp import FastMCP
 from fastmcp.server.middleware.timing import DetailedTimingMiddleware
 from starlette.requests import Request
-from starlette.responses import FileResponse, JSONResponse
+from starlette.responses import HTMLResponse, JSONResponse
 from starlette.staticfiles import StaticFiles
 
+from saleor_mcp.docs import generate_html
 from saleor_mcp.tools import (
     channels_router,
     customers_router,
@@ -38,8 +39,12 @@ async def index(request: Request):
         "img-src 'self'",
         "font-src 'self'",
     )
-    return FileResponse(
-        "src/saleor_mcp/static/index.html",
+
+    # Generate HTML dynamically from template
+    html_content = generate_html()
+
+    return HTMLResponse(
+        content=html_content,
         headers={"Content-Security-Policy": "; ".join(csp_policies)},
     )
 

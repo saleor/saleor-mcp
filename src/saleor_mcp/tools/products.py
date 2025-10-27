@@ -32,7 +32,7 @@ async def products(
         "Slug of a channel for which the data should be returned. If not provided, "
         "general product data is returned.",
     ] = None,
-    sortBy: Annotated[ProductOrder | None, "Sort products by specific field"] = None,
+    sort_by: Annotated[ProductOrder | None, "Sort products by specific field"] = None,
     search: Annotated[str | None, "Search products with full-text search"] = None,
 ) -> dict[str, Any]:
     """Fetch list of products from Saleor GraphQL API.
@@ -47,7 +47,7 @@ async def products(
 
     """
 
-    sort_by = sortBy.model_dump(exclude_unset=True) if sortBy else None
+    sort_by = sort_by.model_dump(exclude_unset=True) if sort_by else None
 
     data = {}
     client = get_saleor_client()

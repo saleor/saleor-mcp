@@ -33,7 +33,7 @@ async def customers(
     after: Annotated[
         str | None, "Cursor for pagination - fetch customers after this cursor"
     ] = None,
-    sortBy: Annotated[
+    sort_by: Annotated[
         UserSortingInput | None, "Sort customers by specific field"
     ] = None,
     where: Annotated[
@@ -50,7 +50,7 @@ async def customers(
     """
 
     where_data = where.model_dump(exclude_unset=True) if where else None
-    sort_by = sortBy.model_dump(exclude_unset=True) if sortBy else None
+    sort_by = sort_by.model_dump(exclude_unset=True) if sort_by else None
 
     data = {}
     client = get_saleor_client()

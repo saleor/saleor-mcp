@@ -1,6 +1,6 @@
 [project]
 name = "saleor-mcp"
-version = "0.1.0"
+version = "0.1.1"
 description = "MCP server for Saleor Commerce"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -12,6 +12,7 @@ dependencies = [
     "graphql-core>=3.2.0",
     "ariadne-codegen>=0.15.2",
     "python-json-logger>=3.3.0",
+    "jinja2>=3.1.0",
 ]
 
 [build-system]
