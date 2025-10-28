@@ -1244,7 +1244,7 @@ wheels = [
 
 [[package]]
 name = "saleor-mcp"
-version = "0.1.1"
+version = "0.1.2"
 source = { editable = "." }
 dependencies = [
     { name = "ariadne-codegen" },
