@@ -263,6 +263,8 @@ class AssignedAttributeReferenceInput(BaseModel):
     pageSlugs: Optional["ContainsFilterInput"] = None
     productSlugs: Optional["ContainsFilterInput"] = None
     productVariantSkus: Optional["ContainsFilterInput"] = None
+    categorySlugs: Optional["ContainsFilterInput"] = None
+    collectionSlugs: Optional["ContainsFilterInput"] = None
 
 
 class ContainsFilterInput(BaseModel):

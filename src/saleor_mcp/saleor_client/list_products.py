@@ -34,8 +34,11 @@ class ListProductsProductsEdgesNode(BaseModel):
     externalReference: Optional[str]
     productType: "ListProductsProductsEdgesNodeProductType"
     category: Optional["ListProductsProductsEdgesNodeCategory"]
+    defaultVariant: Optional["ListProductsProductsEdgesNodeDefaultVariant"]
+    productVariants: Optional["ListProductsProductsEdgesNodeProductVariants"]
     created: Any
     updatedAt: Any
+    thumbnail: Optional["ListProductsProductsEdgesNodeThumbnail"]
     pricing: Optional["ListProductsProductsEdgesNodePricing"]
 
 
@@ -47,6 +50,28 @@ class ListProductsProductsEdgesNodeProductType(BaseModel):
 class ListProductsProductsEdgesNodeCategory(BaseModel):
     id: str
     name: str
+
+
+class ListProductsProductsEdgesNodeDefaultVariant(BaseModel):
+    id: str
+
+
+class ListProductsProductsEdgesNodeProductVariants(BaseModel):
+    edges: List["ListProductsProductsEdgesNodeProductVariantsEdges"]
+
+
+class ListProductsProductsEdgesNodeProductVariantsEdges(BaseModel):
+    node: "ListProductsProductsEdgesNodeProductVariantsEdgesNode"
+
+
+class ListProductsProductsEdgesNodeProductVariantsEdgesNode(BaseModel):
+    id: str
+    name: str
+    sku: Optional[str]
+
+
+class ListProductsProductsEdgesNodeThumbnail(BaseModel):
+    url: str
 
 
 class ListProductsProductsEdgesNodePricing(BaseModel):
@@ -80,6 +105,8 @@ ListProducts.model_rebuild()
 ListProductsProducts.model_rebuild()
 ListProductsProductsEdges.model_rebuild()
 ListProductsProductsEdgesNode.model_rebuild()
+ListProductsProductsEdgesNodeProductVariants.model_rebuild()
+ListProductsProductsEdgesNodeProductVariantsEdges.model_rebuild()
 ListProductsProductsEdgesNodePricing.model_rebuild()
 ListProductsProductsEdgesNodePricingPriceRange.model_rebuild()
 ListProductsProductsEdgesNodePricingPriceRangeStart.model_rebuild()
