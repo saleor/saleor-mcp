@@ -285,8 +285,23 @@ class Client(AsyncBaseClient):
                       id
                       name
                     }
+                    defaultVariant {
+                      id
+                    }
+                    productVariants(first: 20) {
+                      edges {
+                        node {
+                          id
+                          name
+                          sku
+                        }
+                      }
+                    }
                     created
                     updatedAt
+                    thumbnail {
+                      url
+                    }
                     pricing {
                       priceRange {
                         start {
