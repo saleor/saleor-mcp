@@ -5,6 +5,7 @@ from fastmcp import Context, FastMCP
 from ..ctx_utils import get_saleor_client
 from ..saleor_client.base_model import BaseModel
 from ..saleor_client.input_types import (
+    DateRangeInput,
     DateTimeRangeInput,
     OrderSortingInput,
 )
@@ -13,8 +14,8 @@ orders_router = FastMCP("Orders MCP")
 
 
 class OrderFilterInput(BaseModel):
-    created: Optional["DateTimeRangeInput"] = None
-    updated: Optional["DateTimeRangeInput"] = None
+    created: Optional["DateRangeInput"] = None
+    updatedAt: Optional["DateTimeRangeInput"] = None
     search: str | None = None
 
 

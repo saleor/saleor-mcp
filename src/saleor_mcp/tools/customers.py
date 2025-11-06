@@ -5,6 +5,7 @@ from fastmcp import Context, FastMCP
 from ..ctx_utils import get_saleor_client
 from ..saleor_client.base_model import BaseModel
 from ..saleor_client.input_types import (
+    DateRangeInput,
     DateTimeRangeInput,
     UserSortingInput,
 )
@@ -13,7 +14,7 @@ customers_router = FastMCP("Customers MCP")
 
 
 class CustomerFilterInput(BaseModel):
-    dateJoined: Optional["DateTimeRangeInput"] = None
+    dateJoined: Optional["DateRangeInput"] = None
     updatedAt: Optional["DateTimeRangeInput"] = None
 
 
@@ -61,6 +62,10 @@ async def customers(
             filter=filter,
         )
     except Exception as e:
+        error_msg = str(e)
+        if response := getattr(e, "response", None):
+            error_msg = response.json()["errors"][0]["message"]
+            error_msg += f" ({e.response.status_code})"
         await ctx.error(str(e))
         raise
 

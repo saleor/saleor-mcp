@@ -10,7 +10,7 @@ Easiest way to try out the Saleor MCP server is by visiting the production insta
 
 https://mcp.saleor.app/
 
-You can connect to the server with Streamable HTTP at `https://mcp.saleor.app/mcp` endpoint. See the Configuration section below for details on required headers. The production instance is configured to connect to Saleor instances hosted on `saleor.cloud` domain and it's compatible with Saleor 3.22.
+You can connect to the server with Streamable HTTP at `https://mcp.saleor.app/mcp` endpoint. See the Configuration section below for details on required headers. The production instance is configured to connect to Saleor instances hosted on `saleor.cloud` domain and it's compatible with Saleor 3.21+.
 
 ## Installation
 
