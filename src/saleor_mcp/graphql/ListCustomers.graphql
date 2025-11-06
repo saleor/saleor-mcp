@@ -2,16 +2,9 @@ query ListCustomers(
   $first: Int
   $after: String
   $sortBy: UserSortingInput
-  $where: CustomerWhereInput
-  $search: String
+  $filter: CustomerFilterInput
 ) {
-  customers(
-    first: $first
-    after: $after
-    sortBy: $sortBy
-    where: $where
-    search: $search
-  ) {
+  customers(first: $first, after: $after, sortBy: $sortBy, filter: $filter) {
     pageInfo {
       hasNextPage
       hasPreviousPage

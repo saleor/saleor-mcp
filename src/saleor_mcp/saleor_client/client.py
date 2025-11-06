@@ -7,9 +7,9 @@ from .async_base_client import AsyncBaseClient
 from .base_model import UNSET, UnsetType
 from .count_orders import CountOrders
 from .input_types import (
-    CustomerWhereInput,
+    CustomerFilterInput,
+    OrderFilterInput,
     OrderSortingInput,
-    OrderWhereInput,
     ProductOrder,
     ProductWhereInput,
     StockFilterInput,
@@ -29,18 +29,21 @@ def gql(q: str) -> str:
 
 class Client(AsyncBaseClient):
     async def count_orders(
-        self, where: Union[Optional[OrderWhereInput], UnsetType] = UNSET, **kwargs: Any
+        self,
+        filter: Union[Optional[OrderFilterInput], UnsetType] = UNSET,
+        **kwargs: Any,
     ) -> CountOrders:
+        print("count_orders called with filter:", filter)
         query = gql(
             """
-            query CountOrders($where: OrderWhereInput) {
-              orders(where: $where) {
+            query CountOrders($filter: OrderFilterInput) {
+              orders(filter: $filter) {
                 totalCount
               }
             }
             """
         )
-        variables: Dict[str, object] = {"where": where}
+        variables: Dict[str, object] = {"filter": filter}
         response = await self.execute(
             query=query, operation_name="CountOrders", variables=variables, **kwargs
         )
@@ -80,20 +83,13 @@ class Client(AsyncBaseClient):
         first: Union[Optional[int], UnsetType] = UNSET,
         after: Union[Optional[str], UnsetType] = UNSET,
         sortBy: Union[Optional[UserSortingInput], UnsetType] = UNSET,
-        where: Union[Optional[CustomerWhereInput], UnsetType] = UNSET,
-        search: Union[Optional[str], UnsetType] = UNSET,
-        **kwargs: Any
+        filter: Union[Optional[CustomerFilterInput], UnsetType] = UNSET,
+        **kwargs: Any,
     ) -> ListCustomers:
         query = gql(
             """
-            query ListCustomers($first: Int, $after: String, $sortBy: UserSortingInput, $where: CustomerWhereInput, $search: String) {
-              customers(
-                first: $first
-                after: $after
-                sortBy: $sortBy
-                where: $where
-                search: $search
-              ) {
+            query ListCustomers($first: Int, $after: String, $sortBy: UserSortingInput, $filter: CustomerFilterInput) {
+              customers(first: $first, after: $after, sortBy: $sortBy, filter: $filter) {
                 pageInfo {
                   hasNextPage
                   hasPreviousPage
@@ -148,8 +144,7 @@ class Client(AsyncBaseClient):
             "first": first,
             "after": after,
             "sortBy": sortBy,
-            "where": where,
-            "search": search,
+            "filter": filter,
         }
         response = await self.execute(
             query=query, operation_name="ListCustomers", variables=variables, **kwargs
@@ -162,13 +157,14 @@ class Client(AsyncBaseClient):
         first: Union[Optional[int], UnsetType] = UNSET,
         after: Union[Optional[str], UnsetType] = UNSET,
         sortBy: Union[Optional[OrderSortingInput], UnsetType] = UNSET,
-        where: Union[Optional[OrderWhereInput], UnsetType] = UNSET,
-        **kwargs: Any
+        filter: Union[Optional[OrderFilterInput], UnsetType] = UNSET,
+        **kwargs: Any,
     ) -> ListOrders:
+        print("list_orders called with filter:", filter)
         query = gql(
             """
-            query ListOrders($first: Int, $after: String, $sortBy: OrderSortingInput, $where: OrderWhereInput) {
-              orders(first: $first, after: $after, sortBy: $sortBy, where: $where) {
+            query ListOrders($first: Int, $after: String, $sortBy: OrderSortingInput, $filter: OrderFilterInput) {
+              orders(first: $first, after: $after, sortBy: $sortBy, filter: $filter) {
                 pageInfo {
                   hasNextPage
                   hasPreviousPage
@@ -235,7 +231,7 @@ class Client(AsyncBaseClient):
             "first": first,
             "after": after,
             "sortBy": sortBy,
-            "where": where,
+            "filter": filter,
         }
         response = await self.execute(
             query=query, operation_name="ListOrders", variables=variables, **kwargs
@@ -251,7 +247,7 @@ class Client(AsyncBaseClient):
         where: Union[Optional[ProductWhereInput], UnsetType] = UNSET,
         sortBy: Union[Optional[ProductOrder], UnsetType] = UNSET,
         search: Union[Optional[str], UnsetType] = UNSET,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> ListProducts:
         query = gql(
             """
@@ -343,7 +339,7 @@ class Client(AsyncBaseClient):
         first: Union[Optional[int], UnsetType] = UNSET,
         after: Union[Optional[str], UnsetType] = UNSET,
         filter: Union[Optional[StockFilterInput], UnsetType] = UNSET,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> ListStocks:
         query = gql(
             """
@@ -439,7 +435,7 @@ class Client(AsyncBaseClient):
             query=query,
             operation_name="WarehouseDetails",
             variables=variables,
-            **kwargs
+            **kwargs,
         )
         data = self.get_data(response)
         return WarehouseDetails.model_validate(data)

@@ -98,7 +98,7 @@ addopts = [
 ]
 
 [tool.ariadne-codegen]
-remote_schema_url = "https://master.staging.saleor.cloud/graphql/"
+schema_path = "./schema.graphql"
 queries_path = "src/saleor_mcp/graphql"
 target_package_name = "saleor_client"
 target_package_path = "src/saleor_mcp"

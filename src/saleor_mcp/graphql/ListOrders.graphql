@@ -13,9 +13,9 @@ query ListOrders(
   $first: Int
   $after: String
   $sortBy: OrderSortingInput
-  $where: OrderWhereInput
+  $filter: OrderFilterInput
 ) {
-  orders(first: $first, after: $after, sortBy: $sortBy, where: $where) {
+  orders(first: $first, after: $after, sortBy: $sortBy, filter: $filter) {
     pageInfo {
       hasNextPage
       hasPreviousPage

@@ -12,7 +12,7 @@ from ..saleor_client.input_types import (
 customers_router = FastMCP("Customers MCP")
 
 
-class CustomerWhereInput(BaseModel):
+class CustomerFilterInput(BaseModel):
     dateJoined: Optional["DateTimeRangeInput"] = None
     updatedAt: Optional["DateTimeRangeInput"] = None
 
@@ -36,10 +36,9 @@ async def customers(
     sort_by: Annotated[
         UserSortingInput | None, "Sort customers by specific field"
     ] = None,
-    where: Annotated[
-        CustomerWhereInput | None, "Filter customers by specific criteria"
+    filter: Annotated[
+        CustomerFilterInput | None, "Filter customers by specific criteria"
     ] = None,
-    search: Annotated[str | None, "Search customers with full-text search"] = None,
 ) -> dict[str, Any]:
     """Fetch list of customers from Saleor GraphQL API.
 
@@ -49,7 +48,7 @@ async def customers(
 
     """
 
-    where_data = where.model_dump(exclude_unset=True) if where else None
+    filter = filter.model_dump(exclude_unset=True) if filter else None
     sort_by = sort_by.model_dump(exclude_unset=True) if sort_by else None
 
     data = {}
@@ -59,8 +58,7 @@ async def customers(
             first=first,
             after=after,
             sortBy=sort_by,
-            where=where_data,
-            search=search,
+            filter=filter,
         )
     except Exception as e:
         await ctx.error(str(e))
