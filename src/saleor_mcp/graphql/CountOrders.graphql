@@ -1,5 +1,5 @@
-query CountOrders($where: OrderWhereInput) {
-  orders(where: $where) {
+query CountOrders($filter: OrderFilterInput) {
+  orders(filter: $filter) {
     totalCount
   }
 }
