@@ -12,26 +12,29 @@ from jinja2 import Environment, FileSystemLoader
 logger = logging.getLogger(__name__)
 
 
-def get_version_from_pyproject() -> str:
-    """Read version from pyproject.toml.
+def get_pyproject_value(*keys: str, default: Any = None) -> str:
+    """Retrieve a deeply nested value from pyproject.toml.
 
-    Returns:
-        Version string from pyproject.toml, or "unknown" if not found.
-
+    Returns default if not found or error occurs.
     """
     try:
-        # Find pyproject.toml - go up from this file to project root
-        project_root = Path(__file__).parent.parent.parent
-        pyproject_path = project_root / "pyproject.toml"
+        root = Path(__file__).resolve().parent.parent.parent
+        pyproject_path = root / "pyproject.toml"
 
-        if pyproject_path.exists():
-            with open(pyproject_path, "rb") as f:
-                data = tomllib.load(f)
-                return data.get("project", {}).get("version", "unknown")
+        if not pyproject_path.exists():
+            return default
+
+        with pyproject_path.open("rb") as f:
+            data = tomllib.load(f)
+
+        value: Any = data
+        for key in keys:
+            if not isinstance(value, dict):
+                return default
+            value = value.get(key, default)
+        return value
     except Exception:
-        logger.warning("Failed to read version from pyproject.toml")
-
-    return "unknown"
+        return default
 
 
 def generate_html(output_path: str | None = None) -> str:
@@ -55,7 +58,7 @@ def generate_html(output_path: str | None = None) -> str:
     tools = introspect_from_mcp_server(mcp)
 
     # Get version from pyproject.toml
-    version = get_version_from_pyproject()
+    version = get_pyproject_value("project", "version", default="unknown")
 
     # Setup Jinja2 environment
     template_dir = Path(__file__).parent / "templates"

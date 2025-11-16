@@ -4,7 +4,8 @@ from starlette.requests import Request
 from starlette.responses import HTMLResponse, JSONResponse
 from starlette.staticfiles import StaticFiles
 
-from saleor_mcp.docs import generate_html
+from saleor_mcp.docs import generate_html, get_pyproject_value
+from saleor_mcp.telemetry import initialise_telemetry
 from saleor_mcp.tools import (
     channels_router,
     customers_router,
@@ -56,7 +57,11 @@ app.mount("/static", StaticFiles(directory="src/saleor_mcp/static"), name="stati
 def main():
     import uvicorn
 
-    uvicorn.run(app, host="127.0.0.1", port=6000)
+    initialise_telemetry(
+        service_name=get_pyproject_value("project", "name", default="fastmcp"),
+        service_version=get_pyproject_value("project", "version", default="unknown")
+    )
+    uvicorn.run(app, host="127.0.0.1", port=8000)
 
 
 if __name__ == "__main__":

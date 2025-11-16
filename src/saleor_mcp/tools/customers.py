@@ -2,6 +2,7 @@ from typing import Annotated, Any, Optional
 
 from fastmcp import Context, FastMCP
 
+from ..telemetry import instrument, Kind
 from ..ctx_utils import get_saleor_client
 from ..saleor_client.base_model import BaseModel
 from ..saleor_client.input_types import (
@@ -26,6 +27,7 @@ class CustomerFilterInput(BaseModel):
         "openWorldHint": True,
     }
 )
+@instrument(Kind.TOOL)
 async def customers(
     ctx: Context,
     first: Annotated[
