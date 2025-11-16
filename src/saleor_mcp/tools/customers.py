@@ -2,7 +2,6 @@ from typing import Annotated, Any, Optional
 
 from fastmcp import Context, FastMCP
 
-from ..telemetry import instrument, Kind
 from ..ctx_utils import get_saleor_client
 from ..saleor_client.base_model import BaseModel
 from ..saleor_client.input_types import (
@@ -10,6 +9,7 @@ from ..saleor_client.input_types import (
     DateTimeRangeInput,
     UserSortingInput,
 )
+from ..telemetry import instrument, Kind
 
 customers_router = FastMCP("Customers MCP")
 
