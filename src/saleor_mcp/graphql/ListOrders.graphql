@@ -1,14 +1,3 @@
-fragment Address on Address {
-  firstName
-  lastName
-  streetAddress1
-  streetAddress2
-  country {
-    code
-  }
-  postalCode
-}
-
 query ListOrders(
   $first: Int
   $after: String
@@ -31,7 +20,6 @@ query ListOrders(
         created
         updatedAt
         paymentStatus
-        userEmail
         total {
           gross {
             amount
@@ -56,10 +44,14 @@ query ListOrders(
           }
         }
         shippingAddress {
-          ...Address
+          country {
+            code
+          }
         }
         billingAddress {
-          ...Address
+          country {
+            code
+          }
         }
       }
     }

@@ -15,39 +15,19 @@ query ListCustomers(
     edges {
       node {
         id
-        email
-        firstName
-        lastName
         isActive
-        isConfirmed
-        checkouts {
-          totalCount
-        }
-        orders {
-          totalCount
-        }
         languageCode
         lastLogin
         dateJoined
         defaultShippingAddress {
-          firstName
-          lastName
-          streetAddress1
-          streetAddress2
           country {
             code
           }
-          postalCode
         }
         defaultBillingAddress {
-          firstName
-          lastName
-          streetAddress1
-          streetAddress2
           country {
             code
           }
-          postalCode
         }
       }
     }

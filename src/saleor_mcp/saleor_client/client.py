@@ -31,9 +31,8 @@ class Client(AsyncBaseClient):
     async def count_orders(
         self,
         filter: Union[Optional[OrderFilterInput], UnsetType] = UNSET,
-        **kwargs: Any,
+        **kwargs: Any
     ) -> CountOrders:
-        print("count_orders called with filter:", filter)
         query = gql(
             """
             query CountOrders($filter: OrderFilterInput) {
@@ -84,7 +83,7 @@ class Client(AsyncBaseClient):
         after: Union[Optional[str], UnsetType] = UNSET,
         sortBy: Union[Optional[UserSortingInput], UnsetType] = UNSET,
         filter: Union[Optional[CustomerFilterInput], UnsetType] = UNSET,
-        **kwargs: Any,
+        **kwargs: Any
     ) -> ListCustomers:
         query = gql(
             """
@@ -100,39 +99,19 @@ class Client(AsyncBaseClient):
                 edges {
                   node {
                     id
-                    email
-                    firstName
-                    lastName
                     isActive
-                    isConfirmed
-                    checkouts {
-                      totalCount
-                    }
-                    orders {
-                      totalCount
-                    }
                     languageCode
                     lastLogin
                     dateJoined
                     defaultShippingAddress {
-                      firstName
-                      lastName
-                      streetAddress1
-                      streetAddress2
                       country {
                         code
                       }
-                      postalCode
                     }
                     defaultBillingAddress {
-                      firstName
-                      lastName
-                      streetAddress1
-                      streetAddress2
                       country {
                         code
                       }
-                      postalCode
                     }
                   }
                 }
@@ -158,9 +137,8 @@ class Client(AsyncBaseClient):
         after: Union[Optional[str], UnsetType] = UNSET,
         sortBy: Union[Optional[OrderSortingInput], UnsetType] = UNSET,
         filter: Union[Optional[OrderFilterInput], UnsetType] = UNSET,
-        **kwargs: Any,
+        **kwargs: Any
     ) -> ListOrders:
-        print("list_orders called with filter:", filter)
         query = gql(
             """
             query ListOrders($first: Int, $after: String, $sortBy: OrderSortingInput, $filter: OrderFilterInput) {
@@ -180,7 +158,6 @@ class Client(AsyncBaseClient):
                     created
                     updatedAt
                     paymentStatus
-                    userEmail
                     total {
                       gross {
                         amount
@@ -205,25 +182,18 @@ class Client(AsyncBaseClient):
                       }
                     }
                     shippingAddress {
-                      ...Address
+                      country {
+                        code
+                      }
                     }
                     billingAddress {
-                      ...Address
+                      country {
+                        code
+                      }
                     }
                   }
                 }
               }
-            }
-
-            fragment Address on Address {
-              firstName
-              lastName
-              streetAddress1
-              streetAddress2
-              country {
-                code
-              }
-              postalCode
             }
             """
         )
@@ -247,7 +217,7 @@ class Client(AsyncBaseClient):
         where: Union[Optional[ProductWhereInput], UnsetType] = UNSET,
         sortBy: Union[Optional[ProductOrder], UnsetType] = UNSET,
         search: Union[Optional[str], UnsetType] = UNSET,
-        **kwargs: Any,
+        **kwargs: Any
     ) -> ListProducts:
         query = gql(
             """
@@ -339,7 +309,7 @@ class Client(AsyncBaseClient):
         first: Union[Optional[int], UnsetType] = UNSET,
         after: Union[Optional[str], UnsetType] = UNSET,
         filter: Union[Optional[StockFilterInput], UnsetType] = UNSET,
-        **kwargs: Any,
+        **kwargs: Any
     ) -> ListStocks:
         query = gql(
             """
@@ -396,12 +366,11 @@ class Client(AsyncBaseClient):
                 name
                 slug
                 address {
-                  firstName
-                  lastName
-                  streetAddress1
-                  streetAddress2
                   city
                   postalCode
+                  country {
+                    code
+                  }
                 }
                 clickAndCollectOption
                 shippingZones(first: 100) {
@@ -417,7 +386,6 @@ class Client(AsyncBaseClient):
                       }
                       countries {
                         code
-                        country
                       }
                     }
                   }
@@ -435,7 +403,7 @@ class Client(AsyncBaseClient):
             query=query,
             operation_name="WarehouseDetails",
             variables=variables,
-            **kwargs,
+            **kwargs
         )
         data = self.get_data(response)
         return WarehouseDetails.model_validate(data)

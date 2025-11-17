@@ -4,12 +4,11 @@ query WarehouseDetails($id: ID) {
     name
     slug
     address {
-      firstName
-      lastName
-      streetAddress1
-      streetAddress2
       city
       postalCode
+      country {
+        code
+      }
     }
     clickAndCollectOption
     shippingZones(first: 100) {
@@ -25,7 +24,6 @@ query WarehouseDetails($id: ID) {
           }
           countries {
             code
-            country
           }
         }
       }

@@ -22,12 +22,13 @@ class WarehouseDetailsWarehouse(BaseModel):
 
 
 class WarehouseDetailsWarehouseAddress(BaseModel):
-    firstName: str
-    lastName: str
-    streetAddress1: str
-    streetAddress2: str
     city: str
     postalCode: str
+    country: "WarehouseDetailsWarehouseAddressCountry"
+
+
+class WarehouseDetailsWarehouseAddressCountry(BaseModel):
+    code: str
 
 
 class WarehouseDetailsWarehouseShippingZones(BaseModel):
@@ -54,7 +55,6 @@ class WarehouseDetailsWarehouseShippingZonesEdgesNodeChannels(BaseModel):
 
 class WarehouseDetailsWarehouseShippingZonesEdgesNodeCountries(BaseModel):
     code: str
-    country: str
 
 
 class WarehouseDetailsWarehouseMetadata(BaseModel):
@@ -64,6 +64,7 @@ class WarehouseDetailsWarehouseMetadata(BaseModel):
 
 WarehouseDetails.model_rebuild()
 WarehouseDetailsWarehouse.model_rebuild()
+WarehouseDetailsWarehouseAddress.model_rebuild()
 WarehouseDetailsWarehouseShippingZones.model_rebuild()
 WarehouseDetailsWarehouseShippingZonesEdges.model_rebuild()
 WarehouseDetailsWarehouseShippingZonesEdgesNode.model_rebuild()
