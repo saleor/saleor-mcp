@@ -58,7 +58,7 @@ def main():
     import uvicorn
 
     initialise_telemetry(
-        service_name=get_pyproject_value("project", "name", default="fastmcp"),
+        service_name=get_pyproject_value("project", "name", default="saleor-mcp"),
         service_version=get_pyproject_value("project", "version", default="unknown")
     )
     uvicorn.run(app, host="127.0.0.1", port=8000)
