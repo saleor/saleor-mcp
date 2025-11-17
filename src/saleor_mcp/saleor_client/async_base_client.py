@@ -6,8 +6,6 @@ from typing import IO, Any, AsyncIterator, Dict, List, Optional, Tuple, TypeVar,
 from uuid import uuid4
 
 import httpx
-from opentelemetry.propagate import inject
-from opentelemetry.trace import SpanKind
 from pydantic import BaseModel
 from pydantic_core import to_jsonable_python
 
@@ -18,9 +16,6 @@ from .exceptions import (
     GraphQLClientInvalidMessageFormat,
     GraphQLClientInvalidResponseError,
 )
-from ..telemetry.trace import start_as_current_span
-from ..telemetry import mcp_attributes
-
 
 try:
     from websockets import (  # type: ignore[import-not-found,unused-ignore]
@@ -281,29 +276,9 @@ class AsyncBaseClient:
             "map": json.dumps(files_map, default=to_jsonable_python),
         }
 
-        span_name = f"saleor.graphql.{operation_name or 'multipart'}"
-        with start_as_current_span(
-            span_name,
-            kind=SpanKind.CLIENT,
-            attributes={
-                mcp_attributes.HTTP_METHOD: "POST",
-                mcp_attributes.GRAPHQL_OPERATION_NAME: operation_name,
-                mcp_attributes.GRAPHQL_VARIABLES: str(variables),
-                mcp_attributes.SALEOR_ENDPOINT: self.url,
-                mcp_attributes.GRAPHQL_MULTIPART: True,
-                mcp_attributes.GRAPHQL_FILES_COUNT: len(files),
-            },
-        ) as span:
-            response = await self.http_client.post(
-                url=self.url, data=data, files=files, **kwargs
-            )
-            span.set_attribute("http.status_code", response.status_code)
-            span.set_attribute(
-                "http.response_content_length",
-                len(response.content) if response.content else 0,
-            )
-            return response
-
+        return await self.http_client.post(
+            url=self.url, data=data, files=files, **kwargs
+        )
 
     async def _execute_json(
         self,
@@ -314,41 +289,22 @@ class AsyncBaseClient:
     ) -> httpx.Response:
         headers: Dict[str, str] = {"Content-Type": "application/json"}
         headers.update(kwargs.get("headers", {}))
-        inject(headers)
 
         merged_kwargs: Dict[str, Any] = kwargs.copy()
         merged_kwargs["headers"] = headers
 
-        span_name = f"saleor.graphql.{operation_name or 'query'}"
-        with start_as_current_span(
-            span_name,
-            kind=SpanKind.CLIENT,
-            attributes={
-                mcp_attributes.HTTP_METHOD: "POST",
-                mcp_attributes.SALEOR_ENDPOINT: self.url,
-                mcp_attributes.GRAPHQL_OPERATION_NAME: operation_name,
-                mcp_attributes.GRAPHQL_VARIABLES: str(variables),
-            },
-        ) as span:
-            response = await self.http_client.post(
-                url=self.url,
-                content=json.dumps(
-                    {
-                        "query": query,
-                        "operationName": operation_name,
-                        "variables": variables,
-                    },
-                    default=to_jsonable_python,
-                ),
-                **merged_kwargs,
-            )
-            span.set_attribute("http.status_code", response.status_code)
-            span.set_attribute(
-                "http.response_content_length",
-                len(response.content) if response.content else 0
-            )
-            return response
-
+        return await self.http_client.post(
+            url=self.url,
+            content=json.dumps(
+                {
+                    "query": query,
+                    "operationName": operation_name,
+                    "variables": variables,
+                },
+                default=to_jsonable_python,
+            ),
+            **merged_kwargs,
+        )
 
     async def _send_connection_init(self, websocket: ClientConnection) -> None:
         payload: Dict[str, Any] = {

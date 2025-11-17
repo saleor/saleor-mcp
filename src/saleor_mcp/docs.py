@@ -2,7 +2,6 @@
 
 import inspect
 import logging
-import tomllib
 from pathlib import Path
 from typing import Annotated, Any, get_args, get_origin, get_type_hints
 
@@ -10,31 +9,6 @@ from fastmcp import FastMCP
 from jinja2 import Environment, FileSystemLoader
 
 logger = logging.getLogger(__name__)
-
-
-def get_pyproject_value(*keys: str, default: Any = None) -> str:
-    """Retrieve a deeply nested value from pyproject.toml.
-
-    Returns default if not found or error occurs.
-    """
-    try:
-        root = Path(__file__).resolve().parent.parent.parent
-        pyproject_path = root / "pyproject.toml"
-
-        if not pyproject_path.exists():
-            return default
-
-        with pyproject_path.open("rb") as f:
-            data = tomllib.load(f)
-
-        value: Any = data
-        for key in keys:
-            if not isinstance(value, dict):
-                return default
-            value = value.get(key, default)
-        return value
-    except Exception:
-        return default
 
 
 def generate_html(output_path: str | None = None) -> str:
@@ -53,6 +27,7 @@ def generate_html(output_path: str | None = None) -> str:
     """
     # Import here to avoid circular dependency
     from saleor_mcp.main import mcp
+    from saleor_mcp.utils import get_pyproject_value
 
     # Introspect tools from the MCP server and all mounted routers
     tools = introspect_from_mcp_server(mcp)

@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from enum import Enum
 from typing import Any, AsyncIterator, Optional, Callable, Sequence
 
+from opentelemetry import trace
 from opentelemetry.sdk._configuration import _OTelSDKConfigurator
 from opentelemetry.sdk.resources import SERVICE_INSTANCE_ID, SERVICE_NAME, SERVICE_VERSION
 from opentelemetry.trace import StatusCode, Link
@@ -11,11 +12,11 @@ from opentelemetry.util.types import Attributes
 
 from . import mcp_attributes
 from .metric import record_duration, record_operation_count
-from .trace import start_as_current_span
+
+tracer = trace.get_tracer("saleor-mcp")
 
 
 class Kind(Enum):
-    CLIENT = "client"
     TOOL = "tool"
 
 
@@ -44,7 +45,7 @@ async def operation_context(
     span_name = f"mcp.{operation_kind}.{operation_name}"
     async with record_operation_count(metric_attrs):
         async with record_duration(metric_attrs) as (metric_attrs, start_time):
-            with start_as_current_span(
+            with tracer.start_as_current_span(
                 span_name,
                 links=links,
                 start_time=start_time,

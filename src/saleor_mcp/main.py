@@ -4,7 +4,7 @@ from starlette.requests import Request
 from starlette.responses import HTMLResponse, JSONResponse
 from starlette.staticfiles import StaticFiles
 
-from saleor_mcp.docs import generate_html, get_pyproject_value
+from saleor_mcp.docs import generate_html
 from saleor_mcp.telemetry import initialise_telemetry
 from saleor_mcp.tools import (
     channels_router,
@@ -13,6 +13,7 @@ from saleor_mcp.tools import (
     products_router,
     utils_router,
 )
+from saleor_mcp.utils import get_pyproject_value
 
 mcp = FastMCP("Saleor MCP Server")
 mcp.add_middleware(DetailedTimingMiddleware())
