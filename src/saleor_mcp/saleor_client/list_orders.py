@@ -5,7 +5,6 @@ from typing import Any, List, Optional
 
 from .base_model import BaseModel
 from .enums import OrderStatus, PaymentChargeStatusEnum
-from .fragments import Address
 
 
 class ListOrders(BaseModel):
@@ -36,7 +35,6 @@ class ListOrdersOrdersEdgesNode(BaseModel):
     created: Any
     updatedAt: Any
     paymentStatus: PaymentChargeStatusEnum
-    userEmail: Optional[str]
     total: "ListOrdersOrdersEdgesNodeTotal"
     lines: List["ListOrdersOrdersEdgesNodeLines"]
     shippingAddress: Optional["ListOrdersOrdersEdgesNodeShippingAddress"]
@@ -78,12 +76,20 @@ class ListOrdersOrdersEdgesNodeLinesUnitPriceGross(BaseModel):
     amount: float
 
 
-class ListOrdersOrdersEdgesNodeShippingAddress(Address):
-    pass
+class ListOrdersOrdersEdgesNodeShippingAddress(BaseModel):
+    country: "ListOrdersOrdersEdgesNodeShippingAddressCountry"
 
 
-class ListOrdersOrdersEdgesNodeBillingAddress(Address):
-    pass
+class ListOrdersOrdersEdgesNodeShippingAddressCountry(BaseModel):
+    code: str
+
+
+class ListOrdersOrdersEdgesNodeBillingAddress(BaseModel):
+    country: "ListOrdersOrdersEdgesNodeBillingAddressCountry"
+
+
+class ListOrdersOrdersEdgesNodeBillingAddressCountry(BaseModel):
+    code: str
 
 
 ListOrders.model_rebuild()
@@ -94,3 +100,5 @@ ListOrdersOrdersEdgesNodeTotal.model_rebuild()
 ListOrdersOrdersEdgesNodeLines.model_rebuild()
 ListOrdersOrdersEdgesNodeLinesVariant.model_rebuild()
 ListOrdersOrdersEdgesNodeLinesUnitPrice.model_rebuild()
+ListOrdersOrdersEdgesNodeShippingAddress.model_rebuild()
+ListOrdersOrdersEdgesNodeBillingAddress.model_rebuild()

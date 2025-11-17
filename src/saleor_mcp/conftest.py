@@ -29,7 +29,6 @@ def sample_orders_response():
                         "updatedAt": "2023-01-02T00:00:00Z",
                         "paymentStatus": "FULLY_CHARGED",
                         "total": {"gross": {"amount": 100.50, "currency": "USD"}},
-                        "userEmail": "customer@example.com",
                         "lines": [
                             {
                                 "quantity": 2,
@@ -51,21 +50,9 @@ def sample_orders_response():
                             }
                         ],
                         "shippingAddress": {
-                            "firstName": "John",
-                            "lastName": "Doe",
-                            "streetAddress1": "123 Main St",
-                            "streetAddress2": "Apt 4B",
-                            "city": "Anytown",
-                            "postalCode": "12345",
                             "country": {"code": "US", "country": "United States"},
                         },
                         "billingAddress": {
-                            "firstName": "John",
-                            "lastName": "Doe",
-                            "streetAddress1": "123 Main St",
-                            "streetAddress2": "Apt 4B",
-                            "city": "Anytown",
-                            "postalCode": "12345",
                             "country": {"code": "US", "country": "United States"},
                         },
                     }
@@ -150,44 +137,22 @@ def sample_customers_response():
                 {
                     "node": {
                         "id": "VXNlcjox",
-                        "email": "john.doe@example.com",
-                        "firstName": "John",
-                        "lastName": "Doe",
                         "isActive": True,
-                        "isConfirmed": True,
-                        "checkouts": {"totalCount": 2},
-                        "orders": {"totalCount": 5},
                         "languageCode": "EN_US",
                         "lastLogin": "2023-11-01T10:30:00Z",
                         "dateJoined": "2023-01-15T08:00:00Z",
                         "defaultShippingAddress": {
-                            "firstName": "John",
-                            "lastName": "Doe",
-                            "streetAddress1": "123 Main St",
-                            "streetAddress2": "Apt 4B",
                             "country": {"code": "US"},
-                            "postalCode": "12345",
                         },
                         "defaultBillingAddress": {
-                            "firstName": "John",
-                            "lastName": "Doe",
-                            "streetAddress1": "456 Oak Ave",
-                            "streetAddress2": "",
                             "country": {"code": "US"},
-                            "postalCode": "12345",
                         },
                     }
                 },
                 {
                     "node": {
                         "id": "VXNlcjoy",
-                        "email": "jane.smith@example.com",
-                        "firstName": "Jane",
-                        "lastName": "Smith",
                         "isActive": True,
-                        "isConfirmed": False,
-                        "checkouts": {"totalCount": 1},
-                        "orders": {"totalCount": 0},
                         "languageCode": "EN_GB",
                         "lastLogin": None,
                         "dateJoined": "2023-10-20T14:25:00Z",
@@ -198,23 +163,12 @@ def sample_customers_response():
                 {
                     "node": {
                         "id": "VXNlcjoz",
-                        "email": "inactive@example.com",
-                        "firstName": "Inactive",
-                        "lastName": "User",
                         "isActive": False,
-                        "isConfirmed": True,
-                        "checkouts": {"totalCount": 0},
-                        "orders": {"totalCount": 3},
                         "languageCode": "DE",
                         "lastLogin": "2023-05-15T12:00:00Z",
                         "dateJoined": "2022-12-01T09:00:00Z",
                         "defaultShippingAddress": {
-                            "firstName": "Inactive",
-                            "lastName": "User",
-                            "streetAddress1": "789 Pine Rd",
-                            "streetAddress2": "Suite 100",
                             "country": {"code": "DE"},
-                            "postalCode": "10115",
                         },
                         "defaultBillingAddress": None,
                     }
@@ -421,12 +375,9 @@ def sample_warehouse_response():
             "name": "US East Warehouse",
             "slug": "us-east",
             "address": {
-                "firstName": "Warehouse",
-                "lastName": "Manager",
-                "streetAddress1": "123 Storage Lane",
-                "streetAddress2": "Building A",
                 "city": "New York",
                 "postalCode": "10001",
+                "country": {"code": "US"},
             },
             "clickAndCollectOption": "DISABLED",
             "shippingZones": {

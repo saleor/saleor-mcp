@@ -30,13 +30,7 @@ class ListCustomersCustomersEdges(BaseModel):
 
 class ListCustomersCustomersEdgesNode(BaseModel):
     id: str
-    email: str
-    firstName: str
-    lastName: str
     isActive: bool
-    isConfirmed: bool
-    checkouts: Optional["ListCustomersCustomersEdgesNodeCheckouts"]
-    orders: Optional["ListCustomersCustomersEdgesNodeOrders"]
     languageCode: LanguageCodeEnum
     lastLogin: Optional[Any]
     dateJoined: Any
@@ -48,21 +42,8 @@ class ListCustomersCustomersEdgesNode(BaseModel):
     ]
 
 
-class ListCustomersCustomersEdgesNodeCheckouts(BaseModel):
-    totalCount: Optional[int]
-
-
-class ListCustomersCustomersEdgesNodeOrders(BaseModel):
-    totalCount: Optional[int]
-
-
 class ListCustomersCustomersEdgesNodeDefaultShippingAddress(BaseModel):
-    firstName: str
-    lastName: str
-    streetAddress1: str
-    streetAddress2: str
     country: "ListCustomersCustomersEdgesNodeDefaultShippingAddressCountry"
-    postalCode: str
 
 
 class ListCustomersCustomersEdgesNodeDefaultShippingAddressCountry(BaseModel):
@@ -70,12 +51,7 @@ class ListCustomersCustomersEdgesNodeDefaultShippingAddressCountry(BaseModel):
 
 
 class ListCustomersCustomersEdgesNodeDefaultBillingAddress(BaseModel):
-    firstName: str
-    lastName: str
-    streetAddress1: str
-    streetAddress2: str
     country: "ListCustomersCustomersEdgesNodeDefaultBillingAddressCountry"
-    postalCode: str
 
 
 class ListCustomersCustomersEdgesNodeDefaultBillingAddressCountry(BaseModel):
