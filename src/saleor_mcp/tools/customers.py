@@ -43,9 +43,8 @@ async def customers(
 ) -> dict[str, Any]:
     """Fetch list of customers from Saleor GraphQL API.
 
-    This tool retrieves customer information such as: ID, email, first name, last name,
-    active status, confirmation status, checkout and order counts, language code,
-    last login, date joined, and default shipping/billing addresses.
+    This tool retrieves customer information such as: ID, active status, language code,
+    last login, date joined, and default shipping/billing address country.
 
     """
 
