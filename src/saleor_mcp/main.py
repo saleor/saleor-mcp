@@ -62,7 +62,7 @@ def main():
         service_name=get_pyproject_value("project", "name", default="saleor-mcp"),
         service_version=get_pyproject_value("project", "version", default="unknown")
     )
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    uvicorn.run(app, host="127.0.0.1", port=6000)
 
 
 if __name__ == "__main__":
