@@ -47,8 +47,8 @@ async def orders(
     """Fetch list of orders from Saleor GraphQL API.
 
     This tool retrieves the list of orders. For each order it returns information such
-    as: ID, number, status, creation date, last update date, payment status, user email,
-    total amount, shipping address, billing address, order lines which include:
+    as: ID, number, status, creation date, last update date, payment status, total
+    amount, shipping and billing address country, order lines which include:
     quantity, product SKU, variant name, product ID, product name, unit price.
 
     Args:
