@@ -13,6 +13,7 @@ dependencies = [
     "ariadne-codegen>=0.15.2",
     "python-json-logger>=3.3.0",
     "jinja2>=3.1.0",
+    "ty>=0.0.5",
 ]
 
 [build-system]
@@ -30,7 +31,18 @@ dev = [
     "ruff>=0.1.0",
     "pytest-socket>=0.7.0",
     "ipdb>=0.13.13",
+    "ty>=0.0.5",
 ]
+
+[tool.ariadne-codegen]
+schema_path = "./schema.graphql"
+queries_path = "src/saleor_mcp/graphql"
+target_package_name = "saleor_client"
+target_package_path = "src/saleor_mcp"
+convert_to_snake_case = false
+
+[tool.ty.src]
+exclude = ["src/saleor_mcp/saleor_client/*"]
 
 [tool.ruff]
 target-version = "py312"
@@ -97,9 +109,3 @@ addopts = [
     "--allow-unix-socket",
 ]
 
-[tool.ariadne-codegen]
-schema_path = "./schema.graphql"
-queries_path = "src/saleor_mcp/graphql"
-target_package_name = "saleor_client"
-target_package_path = "src/saleor_mcp"
-convert_to_snake_case = false
