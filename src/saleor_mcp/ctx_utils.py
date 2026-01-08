@@ -1,5 +1,6 @@
 from .config import get_config_from_headers
 from .saleor_client.client import Client
+from .saleor_client.graphql_client import instrument_graphql_client
 
 
 def get_saleor_client() -> Client:
@@ -7,6 +8,8 @@ def get_saleor_client() -> Client:
 
     Note: This function works only within a request context.
     """
+
     saleor_headers = get_config_from_headers()
     headers = {"Authorization": f"Bearer {saleor_headers.auth_token}"}
-    return Client(url=saleor_headers.api_url, headers=headers)
+    client = Client(url=saleor_headers.api_url, headers=headers)
+    return instrument_graphql_client(client)

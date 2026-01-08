@@ -3,6 +3,7 @@ from typing import Any
 from fastmcp import Context, FastMCP
 
 from ..ctx_utils import get_saleor_client
+from ..telemetry import instrument, Kind
 
 channels_router = FastMCP("Channels MCP")
 
@@ -15,6 +16,7 @@ channels_router = FastMCP("Channels MCP")
         "openWorldHint": True,
     }
 )
+@instrument(Kind.TOOL)
 async def channels(ctx: Context) -> dict[str, Any]:
     """Fetch the list of channels from Saleor.
 
