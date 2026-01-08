@@ -2,7 +2,7 @@ from .config import get_config_from_headers
 from .saleor_client.client import Client
 
 
-def get_saleor_client():
+def get_saleor_client() -> Client:
     """Create and return a Saleor GraphQL client using configuration from headers.
 
     Note: This function works only within a request context.

@@ -171,6 +171,8 @@ def extract_tool_info(router: FastMCP) -> list[dict[str, Any]]:
         router_tools = router._tool_manager._tools
 
         for tool_name, tool in router_tools.items():
+            if not hasattr(tool, "fn"):
+                continue
             func = tool.fn
 
             # Get the actual function (unwrap if needed)
