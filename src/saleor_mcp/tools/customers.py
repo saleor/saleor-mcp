@@ -66,7 +66,7 @@ async def customers(
         error_msg = str(e)
         if response := getattr(e, "response", None):
             error_msg = response.json()["errors"][0]["message"]
-            error_msg += f" ({e.response.status_code})"
+            error_msg += f" ({response.status_code})"
         await ctx.error(str(e))
         raise
 

@@ -84,16 +84,18 @@ async def test_orders_empty_result(mock_saleor_config):
     """Test orders fetch with empty result."""
     from saleor_mcp.saleor_client.list_orders import ListOrders
 
-    empty_response = ListOrders(
-        orders={
-            "edges": [],
-            "totalCount": 0,
-            "pageInfo": {
-                "hasNextPage": False,
-                "hasPreviousPage": False,
-                "startCursor": None,
-                "endCursor": None,
-            },
+    empty_response = ListOrders.model_validate(
+        {
+            "orders": {
+                "edges": [],
+                "totalCount": 0,
+                "pageInfo": {
+                    "hasNextPage": False,
+                    "hasPreviousPage": False,
+                    "startCursor": None,
+                    "endCursor": None,
+                },
+            }
         }
     )
 

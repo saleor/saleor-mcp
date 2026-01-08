@@ -3,7 +3,7 @@ from .saleor_client.client import Client
 from .saleor_client.graphql_client import instrument_graphql_client
 
 
-def get_saleor_client():
+def get_saleor_client() -> Client:
     """Create and return a Saleor GraphQL client using configuration from headers.
 
     Note: This function works only within a request context.
