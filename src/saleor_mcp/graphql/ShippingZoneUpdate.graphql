@@ -1,0 +1,23 @@
+mutation ShippingZoneUpdate($id: ID!, $input: ShippingZoneUpdateInput!) {
+    shippingZoneUpdate(id: $id, input: $input) {
+        shippingZone {
+            id
+            name
+            warehouses {
+                id
+                name
+            }
+            channels {
+                id
+                name
+                slug
+            }
+        }
+        errors {
+            field
+            message
+            code
+        }
+    }
+}
+

@@ -1,0 +1,20 @@
+query ListShippingZones($first: Int = 20) {
+    shippingZones(first: $first) {
+        edges {
+            node {
+                id
+                name
+                warehouses {
+                    id
+                    name
+                }
+                channels {
+                    id
+                    name
+                    slug
+                }
+            }
+        }
+    }
+}
+
