@@ -7,6 +7,7 @@ from ..saleor_client.input_types import (
     ProductOrder,
     StockFilterInput,
 )
+from ..telemetry import instrument, Kind
 
 products_router = FastMCP("Products MCP")
 
@@ -19,6 +20,7 @@ products_router = FastMCP("Products MCP")
         "openWorldHint": True,
     }
 )
+@instrument(Kind.TOOL)
 async def products(
     ctx: Context,
     first: Annotated[

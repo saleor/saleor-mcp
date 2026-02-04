@@ -9,6 +9,7 @@ from ..saleor_client.input_types import (
     DateTimeRangeInput,
     OrderSortingInput,
 )
+from ..telemetry import instrument, Kind
 
 orders_router = FastMCP("Orders MCP")
 
@@ -27,6 +28,7 @@ class OrderFilterInput(BaseModel):
         "openWorldHint": True,
     }
 )
+@instrument(Kind.TOOL)
 async def orders(
     ctx: Context,
     first: Annotated[
@@ -92,6 +94,7 @@ async def orders(
         "openWorldHint": True,
     }
 )
+@instrument(Kind.TOOL)
 async def order_count(
     ctx: Context,
     filter: Annotated[

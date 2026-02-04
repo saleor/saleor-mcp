@@ -9,6 +9,7 @@ from ..saleor_client.input_types import (
     DateTimeRangeInput,
     UserSortingInput,
 )
+from ..telemetry import instrument, Kind
 
 customers_router = FastMCP("Customers MCP")
 
@@ -26,6 +27,7 @@ class CustomerFilterInput(BaseModel):
         "openWorldHint": True,
     }
 )
+@instrument(Kind.TOOL)
 async def customers(
     ctx: Context,
     first: Annotated[

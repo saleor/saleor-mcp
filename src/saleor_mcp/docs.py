@@ -2,7 +2,6 @@
 
 import inspect
 import logging
-import tomllib
 from pathlib import Path
 from typing import Annotated, Any, get_args, get_origin, get_type_hints
 
@@ -10,28 +9,6 @@ from fastmcp import FastMCP
 from jinja2 import Environment, FileSystemLoader
 
 logger = logging.getLogger(__name__)
-
-
-def get_version_from_pyproject() -> str:
-    """Read version from pyproject.toml.
-
-    Returns:
-        Version string from pyproject.toml, or "unknown" if not found.
-
-    """
-    try:
-        # Find pyproject.toml - go up from this file to project root
-        project_root = Path(__file__).parent.parent.parent
-        pyproject_path = project_root / "pyproject.toml"
-
-        if pyproject_path.exists():
-            with open(pyproject_path, "rb") as f:
-                data = tomllib.load(f)
-                return data.get("project", {}).get("version", "unknown")
-    except Exception:
-        logger.warning("Failed to read version from pyproject.toml")
-
-    return "unknown"
 
 
 def generate_html(output_path: str | None = None) -> str:
@@ -50,12 +27,13 @@ def generate_html(output_path: str | None = None) -> str:
     """
     # Import here to avoid circular dependency
     from saleor_mcp.main import mcp
+    from saleor_mcp.utils import get_pyproject_value
 
     # Introspect tools from the MCP server and all mounted routers
     tools = introspect_from_mcp_server(mcp)
 
     # Get version from pyproject.toml
-    version = get_version_from_pyproject()
+    version = get_pyproject_value("project", "version", default="unknown")
 
     # Setup Jinja2 environment
     template_dir = Path(__file__).parent / "templates"
