@@ -1,4 +1,4 @@
-name: Publish image and deploy to staging
+name: Build image from main and deploy to staging
 
 on:
   push:
@@ -6,78 +6,82 @@ on:
       - main
 
 jobs:
-  publish:
+  prepare-variables:
     runs-on: ubuntu-24.04
+    timeout-minutes: 5
     permissions:
-      id-token: write # needed by aws-actions/configure-aws-credentials
       contents: read
-    env:
-      AWS_REGION: eu-west-1
+
+    outputs:
+      image_tag: ${{ steps.prepare-variables.outputs.IMAGE_TAG }}
+      ecr_tags: ${{ steps.prepare-variables.outputs.ECR_TAGS }}
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v5
-      
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392 # v3.6.0
-        with:
-          platforms: arm64
+      # Required by prepare-variables
+      - uses: actions/checkout@v6
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
-        with:
-          install: true
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
-        with:
-          role-to-assume: arn:aws:iam::${{ secrets.AWS_STAGING_ACCOUNT_ID }}:role/${{ secrets.AWS_APPS_SALEOR_MCP_STAGING_CICD_ROLE_NAME }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - id: ecr-login
-        name: Login to Amazon ECR
-        uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076 # v2.0.1
-        with:
-          registries: ${{ secrets.AWS_ECR_ACCOUNT }}
-
-      - name: Evaluate image tags
+      - name: Prepare variables
+        id: prepare-variables
         env:
-          IMAGE_REPOSITORY: ${{ steps.ecr-login.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}
-          BRANCH_IMAGE_TAG: ${{ github.ref_name }}
+          # github.ref_name = plain (no prefix) branch name that
+          # triggered the workflow (e.g. "main", "v1.2.3").
+          # We are passing it through env to prevent script injection via crafted
+          # branch names (e.g. a branch named `; rm -rf /` would be interpolated
+          # directly into the shell script if using ${{ }} inline).
+          REF_NAME: ${{ github.ref_name }}
         run: |
-          UNIQUE_IMAGE_TAG=${BRANCH_IMAGE_TAG}-$(git rev-parse --short HEAD)
+          set -u
 
-          IMAGE_TAGS=${IMAGE_REPOSITORY}:${BRANCH_IMAGE_TAG},${IMAGE_REPOSITORY}:${UNIQUE_IMAGE_TAG}
+          image_tag_unique="${REF_NAME}-$(git rev-parse --short HEAD)"
+          ecr_tags="${image_tag_unique},${REF_NAME}-latest"
 
-          echo "UNIQUE_IMAGE_TAG=${UNIQUE_IMAGE_TAG}" >> $GITHUB_ENV
-          echo "IMAGE_TAGS=${IMAGE_TAGS}" >> $GITHUB_ENV
+          echo "IMAGE_TAG=${image_tag_unique}" >> $GITHUB_OUTPUT
+          echo "ECR_TAGS=${ecr_tags}" >> $GITHUB_OUTPUT
 
-      - name: Build and push
-        timeout-minutes: 20
-        uses: docker/build-push-action@v4
+
+  build-push:
+    needs: [prepare-variables]
+    uses: saleor/saleor-internal-actions/.github/workflows/build-push-image-multi-platform.yaml@9c7a814c011945f26f0aa1191fc9c62de45477c2 # v1.7.0
+
+    permissions:
+      contents: read
+      id-token: write # needed for AWS/ECR login
+      packages: write # needed for GHCR (not used, but required permission)
+
+    with:
+      tags: ${{ needs.prepare-variables.outputs.ecr_tags }}
+      enable-aws-ecr: true
+      aws-ecr-region: eu-west-1
+
+    secrets:
+      oci-full-repository: ${{ secrets.AWS_ECR_ACCOUNT }}.dkr.ecr.eu-west-1.amazonaws.com/${{ secrets.ECR_REPOSITORY }}
+      aws-ecr-role-to-assume: arn:aws:iam::${{ secrets.AWS_STAGING_ACCOUNT_ID }}:role/${{ secrets.AWS_APPS_SALEOR_MCP_STAGING_CICD_ROLE_NAME }}
+      aws-ecr-registries: ${{ secrets.AWS_ECR_ACCOUNT }}
+
+  deploy:
+    needs: [prepare-variables, build-push]
+    runs-on: ubuntu-24.04
+    permissions: {}
+
+    steps:
+      - name: Get Token
+        id: get-token
+        uses: saleor/saleor-internal-actions/request-vault-token@6a0fa7c073b3857a11d414f25a149065fe5a0fcf # v1.4.0
         with:
-          context: .
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ env.IMAGE_TAGS }}
-          cache-from: type=gha,scope=buildkit-master
-          cache-to: type=gha,scope=buildkit-master
+          vault-url: ${{ secrets.VAULT_URL }}
+          vault-jwt: ${{ secrets.VAULT_JWT }}
 
       - name: Trigger staging deployment
+        env:
+          GITHUB_TOKEN: ${{ steps.get-token.outputs.token }}
+          IMAGE_TAG: ${{ needs.prepare-variables.outputs.image_tag }}
         run: |
-          export GITHUB_TOKEN=$( \
-            curl --request GET --url ${{ secrets.VAULT_URL}} --header "Authorization: JWT ${{ secrets.VAULT_JWT }}" | jq -r .token \
-          )
-
-          echo "::add-mask::$GITHUB_TOKEN"
-
           payload=$(
-            jq --arg image_tag "$UNIQUE_IMAGE_TAG" -n '{
+            jq -n --arg image_tag "$IMAGE_TAG" '{
               "event_type": "saleor-mcp-staging",
               "client_payload": {
                 "image_tag": $image_tag
               }
             }'
           )
-
-          gh api /repos/saleor/saleor-cloud-deployments/dispatches --input <(echo "$payload")
+          gh api /repos/saleor/saleor-cloud-deployments/dispatches --input - <<< "$payload"
