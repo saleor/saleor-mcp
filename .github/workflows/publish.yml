@@ -23,14 +23,14 @@ jobs:
       - name: Prepare variables
         id: prepare-variables
         env:
-          # github.ref_name is the plain (no prefix) branch or tag name that
+          # github.ref_name = plain (no prefix) branch name that
           # triggered the workflow (e.g. "main", "v1.2.3").
           # We are passing it through env to prevent script injection via crafted
           # branch names (e.g. a branch named `; rm -rf /` would be interpolated
           # directly into the shell script if using ${{ }} inline).
           REF_NAME: ${{ github.ref_name }}
         run: |
-          set -x
+          set -u
 
           image_tag_unique="${REF_NAME}-$(git rev-parse --short HEAD)"
           ecr_tags="${image_tag_unique},${REF_NAME}-latest"
