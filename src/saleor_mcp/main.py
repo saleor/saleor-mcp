@@ -41,7 +41,7 @@ async def index(request: Request):
     )
 
     # Generate HTML dynamically from template
-    html_content = generate_html()
+    html_content = await generate_html()
 
     return HTMLResponse(
         content=html_content,

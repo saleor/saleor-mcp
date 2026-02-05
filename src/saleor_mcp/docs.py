@@ -4,9 +4,10 @@ import inspect
 import logging
 import tomllib
 from pathlib import Path
-from typing import Annotated, Any, get_args, get_origin, get_type_hints
+from typing import Annotated, Any, cast, get_args, get_origin, get_type_hints
 
 from fastmcp import FastMCP
+from fastmcp.tools import FunctionTool, Tool
 from jinja2 import Environment, FileSystemLoader
 
 logger = logging.getLogger(__name__)
@@ -34,7 +35,7 @@ def get_version_from_pyproject() -> str:
     return "unknown"
 
 
-def generate_html(output_path: str | None = None) -> str:
+async def generate_html(output_path: str | None = None) -> str:
     """Generate HTML documentation from tools.
 
     Automatically discovers all tools from the main MCP server and its mounted
@@ -52,7 +53,7 @@ def generate_html(output_path: str | None = None) -> str:
     from saleor_mcp.main import mcp
 
     # Introspect tools from the MCP server and all mounted routers
-    tools = introspect_from_mcp_server(mcp)
+    tools = await introspect_from_mcp_server(mcp)
 
     # Get version from pyproject.toml
     version = get_version_from_pyproject()
@@ -155,7 +156,7 @@ def extract_param_info(func: Any) -> list[dict[str, Any]]:
     return params
 
 
-def extract_tool_info(router: FastMCP) -> list[dict[str, Any]]:
+async def extract_tool_info(router: FastMCP) -> list[dict[str, Any]]:
     """Extract tool information from a FastMCP router.
 
     Returns a list of tool dictionaries with:
@@ -166,46 +167,43 @@ def extract_tool_info(router: FastMCP) -> list[dict[str, Any]]:
     """
     tools = []
 
-    # Access the tool manager's internal tools dictionary
-    if hasattr(router, "_tool_manager") and hasattr(router._tool_manager, "_tools"):
-        router_tools = router._tool_manager._tools
+    tool: Tool
+    for tool_name, tool in (await router.get_tools()).items():
+        # Warn if we didn't manage to generate docs due to only supporting
+        # tools that invoke functions. If user sees this warning, they might
+        # want to consider implementing logic for their tool.
+        if isinstance(tool, FunctionTool) is False:
+            logger.warning("Unsupported tool type for the tool %s: %r", tool_name, tool)
+            continue
 
-        for tool_name, tool in router_tools.items():
-            if not hasattr(tool, "fn"):
-                continue
-            func = tool.fn
+        tool = cast(FunctionTool, tool)
+        func = tool.fn
 
-            # Get the actual function (unwrap if needed)
-            if hasattr(func, "__wrapped__"):
-                func = func.__wrapped__
+        # Extract docstring
+        docstring = inspect.getdoc(func) or ""
+        # Take first two paragraphs as description
+        description = "".join(docstring.split("\n\n")[:2]).replace("\n", " ").strip()
 
-            # Extract docstring
-            docstring = inspect.getdoc(func) or ""
-            # Take first two paragraphs as description
-            description = (
-                "".join(docstring.split("\n\n")[:2]).replace("\n", " ").strip()
-            )
+        # Extract parameters
+        arguments = extract_param_info(func)
 
-            # Extract parameters
-            arguments = extract_param_info(func)
+        # Create human-readable name from function name
+        # e.g., "list_orders" -> "List Orders"
+        name = tool_name.replace("_", " ").title()
 
-            # Create human-readable name from function name
-            # e.g., "list_orders" -> "List Orders"
-            name = tool_name.replace("_", " ").title()
+        tool_info = {
+            "id": tool_name,
+            "name": name,
+            "description": description,
+            "arguments": arguments,
+        }
 
-            tool_info = {
-                "id": tool_name,
-                "name": name,
-                "description": description,
-                "arguments": arguments,
-            }
-
-            tools.append(tool_info)
+        tools.append(tool_info)
 
     return tools
 
 
-def introspect_from_mcp_server(mcp_server: FastMCP) -> list[dict[str, Any]]:
+async def introspect_from_mcp_server(mcp_server: FastMCP) -> list[dict[str, Any]]:
     """Introspect all tools from a FastMCP server and its mounted routers.
 
     This function automatically discovers all mounted routers in the MCP server
@@ -222,19 +220,8 @@ def introspect_from_mcp_server(mcp_server: FastMCP) -> list[dict[str, Any]]:
     all_tools = []
 
     # Get tools from the main server itself
-    main_tools = extract_tool_info(mcp_server)
+    main_tools = await extract_tool_info(mcp_server)
     all_tools.extend(main_tools)
-
-    # Get tools from all mounted routers
-    if hasattr(mcp_server, "_tool_manager") and hasattr(
-        mcp_server._tool_manager, "_mounted_servers"
-    ):
-        mounted_servers = mcp_server._tool_manager._mounted_servers
-        for mounted_server in mounted_servers:
-            if hasattr(mounted_server, "server"):
-                router = mounted_server.server
-                router_tools = extract_tool_info(router)
-                all_tools.extend(router_tools)
 
     # Sort tools by name for consistent ordering
     all_tools.sort(key=lambda x: x["name"])
