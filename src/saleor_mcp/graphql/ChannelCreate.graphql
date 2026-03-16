@@ -1,0 +1,20 @@
+mutation ChannelCreate($input: ChannelCreateInput!) {
+  channelCreate(input: $input) {
+    channel {
+      id
+      slug
+      name
+      isActive
+      currencyCode
+      defaultCountry {
+        code
+      }
+    }
+    errors {
+      field
+      message
+      code
+    }
+  }
+}
+
