@@ -1,5 +1,0 @@
-query CountOrders($filter: OrderFilterInput) {
-  orders(filter: $filter) {
-    totalCount
-  }
-}

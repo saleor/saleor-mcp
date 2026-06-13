@@ -1,16 +1,15 @@
 [project]
 name = "saleor-mcp"
-version = "0.1.3"
+version = "0.2.0"
 description = "MCP server for Saleor Commerce"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "fastmcp>=0.2.0",
+    "fastmcp>=2.11.0,<3",
     "uvicorn>=0.24.0",
     "httpx>=0.25.0",
     "pydantic>=2.5.0",
     "graphql-core>=3.2.0",
-    "ariadne-codegen>=0.15.2",
     "python-json-logger>=3.3.0",
     "jinja2>=3.1.0",
     "ty>=0.0.5",
@@ -46,20 +45,9 @@ idna = "2026-05-12T22:45:57Z" # https://github.com/advisories/GHSA-65pc-fj4g-8rj
 starlette = "2026-05-21T21:58:58Z" # https://github.com/Kludex/starlette/security/advisories/GHSA-86qp-5c8j-p5mr
 cryptography = "2026-06-09T22:32:11Z" # Bumps OpenSSL to v4.0.1 (security)
 
-[tool.ariadne-codegen]
-schema_path = "./schema.graphql"
-queries_path = "src/saleor_mcp/graphql"
-target_package_name = "saleor_client"
-target_package_path = "src/saleor_mcp"
-convert_to_snake_case = false
-
-[tool.ty.src]
-exclude = ["src/saleor_mcp/saleor_client/*"]
-
 [tool.ruff]
 target-version = "py312"
 line-length = 88
-exclude = ["src/saleor_mcp/saleor_client/*"]
 
   [tool.ruff.lint]
   select = [
