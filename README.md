@@ -26,34 +26,64 @@ It also exposes the full schema as an MCP resource (`saleor://schema/graphql`) a
 
 ## Connecting
 
-The server resolves the Saleor connection from either environment variables (used by
-the local **stdio** transport) or HTTP headers (used by the hosted **Streamable HTTP**
-transport). Headers take precedence when present.
+What the assistant can do is bounded by two things: your **token's permissions** and
+the server's **safety policy** (see [Safety policy](#safety-policy)).
+
+There are two ways to run the server:
+
+- **Local install (recommended)** — runs on your machine over **stdio**. Your token
+  only ever travels from your machine directly to your own Saleor instance.
+- **Hosted** — a shared **Streamable HTTP** endpoint, handy for a quick read-only try
+  without installing anything. Your token transits the hosted server, so it runs
+  `read_only` by default.
+
+Connection settings come from environment variables (local/stdio) or HTTP headers
+(hosted); headers take precedence when both are present:
 
 | Setting | Environment variable | HTTP header |
 | --- | --- | --- |
 | Saleor GraphQL URL | `SALEOR_API_URL` | `X-Saleor-API-URL` |
 | Saleor auth token | `SALEOR_AUTH_TOKEN` | `X-Saleor-Auth-Token` |
 
-Create the token in Saleor (e.g. a staff/app access token) with exactly the
-permissions you want the assistant to have — that token scope is your primary control.
+### Get a Saleor token
 
-### Local install (stdio) — recommended for power users
+The token's permissions are the ceiling on what the assistant can do, so create one
+scoped to exactly what you want to allow. **Prefer an App token:** in your Saleor
+Dashboard create an App, grant it only the permissions
+you are comfortable giving an AI assistant, and copy its access token. App tokens are
+long-lived, scoped, and revocable — deactivate or delete the App to revoke access.
 
-Running locally keeps a write-capable token on your machine: it only ever flows to
-your own Saleor instance, never through a shared host. Example Claude Code
-configuration (`.mcp.json` or `claude mcp add`):
+Avoid using a staff login token (the JWT from `tokenCreate`) here, as it expires after a
+few minutes.
+
+### Local install (stdio) — recommended
+
+**Prerequisite:** install [uv](https://docs.astral.sh/uv/). It is a single binary and
+also manages Python for you, so nothing else is required:
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh   # macOS/Linux
+# or: brew install uv   /   winget install astral-sh.uv
+```
+
+Then point your MCP client at the server with `uvx`, which fetches and runs it on
+demand. The client launches the command for you — you only add the config
+block. Example Claude Code configuration (`.mcp.json` or `claude mcp add`):
 
 ```json
 {
   "mcpServers": {
     "saleor": {
       "command": "uvx",
-      "args": ["--from", "saleor-mcp", "saleor-mcp"],
+      "args": [
+        "--from",
+        "git+https://github.com/saleor/saleor-mcp",
+        "saleor-mcp"
+      ],
       "env": {
         "SALEOR_MCP_TRANSPORT": "stdio",
         "SALEOR_API_URL": "https://example.saleor.cloud/graphql/",
-        "SALEOR_AUTH_TOKEN": "eyJhb...",
+        "SALEOR_AUTH_TOKEN": "<your token>",
         "SALEOR_MCP_MODE": "read_write"
       }
     }
@@ -61,12 +91,27 @@ configuration (`.mcp.json` or `claude mcp add`):
 }
 ```
 
-When run from a checkout, the command is `uv run saleor-mcp` with the same `env`.
+Or add it in one command with the Claude Code CLI (`-s user` makes it available in
+every project; drop it to add only to the current one):
+
+```bash
+claude mcp add saleor -s user \
+  -e SALEOR_MCP_TRANSPORT=stdio \
+  -e SALEOR_API_URL=https://example.saleor.cloud/graphql/ \
+  -e SALEOR_AUTH_TOKEN=<your token> \
+  -e SALEOR_MCP_MODE=read_write \
+  -- uvx --from git+https://github.com/saleor/saleor-mcp saleor-mcp
+```
+
+Pin to a specific release by appending a tag, e.g.
+`git+https://github.com/saleor/saleor-mcp@0.2.0`. The same config works in Cursor and
+VS Code / Copilot under their respective `mcpServers` / `servers` keys. When run from a
+checkout instead, the command is `uv run saleor-mcp` with the same `env`.
 
 For a full local walkthrough (running against a local Saleor and wiring it into Claude
 Code), see [docs/testing-with-claude-code.md](docs/testing-with-claude-code.md).
 
-### Hosted (Streamable HTTP)
+### Hosted (Streamable HTTP) — quick read-only trial
 
 Connect to a deployed instance and pass the connection via headers. Example VS Code /
 Copilot `mcp.json`:
@@ -79,16 +124,15 @@ Copilot `mcp.json`:
       "url": "https://mcp.saleor.app/mcp",
       "headers": {
         "X-Saleor-API-URL": "https://example.saleor.cloud/graphql/",
-        "X-Saleor-Auth-Token": "eyJhb..."
+        "X-Saleor-Auth-Token": "<your token>"
       }
     }
   }
 }
 ```
 
-> Note: over hosted HTTP the safety mode is `read_only` unless the deployment is
-> configured otherwise, and your token transits the hosted server. For write or admin
-> workloads with a powerful token, prefer the local stdio install.
+> The hosted endpoint runs `read_only`, and your token transits the shared server. For
+> write or admin workloads with a powerful token, use the local install above.
 
 ## Safety policy
 
