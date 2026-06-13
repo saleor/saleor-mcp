@@ -47,17 +47,18 @@
             Welcome to Saleor MCP
           </h2>
           <p class="card-description">
-            Transform how you interact with your Saleor store data
+            Query and operate your Saleor store from your AI assistant
           </p>
         </div>
         <div class="card-content">
           <p>
-            The Model Context Protocol (MCP) is a way to plug Saleor's API into
-            an LLM, letting you ask questions about your store data in the
-            context of the LLM itself. This lets you take an agent that you
-            already use, like Cursor, and pull in additional information from
-            Saleor to help with tasks like business analysis, inventory
-            management, and customer insights.
+            The Model Context Protocol (MCP) is a way to plug Saleor's GraphQL
+            API into an LLM. Rather than a fixed set of actions, this server
+            gives your AI assistant generic tools to explore the schema and run
+            GraphQL queries and mutations — so it can both read your store data
+            and make changes on your behalf. Take an agent you already use, like
+            Cursor or Claude Code, and work with Saleor for tasks like business
+            analysis, inventory management, and bulk edits.
           </p>
 
           <div class="highlight-box">
@@ -118,9 +119,10 @@
           </div>
 
           <p>
-            This provides an easy interface to learn insights about your Saleor
-            store without needing to navigate through different dashboards or
-            write complex queries.
+            The assistant composes the GraphQL for you, so you can get insights
+            and make changes without navigating dashboards or writing queries by
+            hand. What it can do is bounded by your access token's permissions
+            and the server's safety policy.
           </p>
         </div>
       </div>
