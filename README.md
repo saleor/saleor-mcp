@@ -63,6 +63,9 @@ configuration (`.mcp.json` or `claude mcp add`):
 
 When run from a checkout, the command is `uv run saleor-mcp` with the same `env`.
 
+For a full local walkthrough (running against a local Saleor and wiring it into Claude
+Code), see [docs/testing-with-claude-code.md](docs/testing-with-claude-code.md).
+
 ### Hosted (Streamable HTTP)
 
 Connect to a deployed instance and pass the connection via headers. Example VS Code /
