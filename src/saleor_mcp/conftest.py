@@ -12,9 +12,11 @@ def mock_saleor_config():
 
 @pytest.fixture(autouse=True)
 def _clear_schema_cache():
-    """Ensure the introspection cache never leaks between tests."""
+    """Ensure the introspection caches never leak between tests."""
     from saleor_mcp import introspection
 
     introspection._schema_cache.clear()
+    introspection._bundled_schema_cache.clear()
     yield
     introspection._schema_cache.clear()
+    introspection._bundled_schema_cache.clear()

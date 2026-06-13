@@ -29,6 +29,31 @@ def test_analyze_mutation_root_fields():
     assert analysis.mutation_fields == ["productCreate"]
 
 
+def test_analyze_mutation_resolves_inline_fragment():
+    # An inline fragment on the mutation root must not hide the field name.
+    doc = "mutation { ... on Mutation { staffCreate(input: {}) { user { id } } } }"
+    analysis = analyze_document(doc)
+    assert analysis.has_mutation
+    assert analysis.mutation_fields == ["staffCreate"]
+
+
+def test_analyze_mutation_resolves_fragment_spread():
+    doc = (
+        "mutation { ...M } "
+        "fragment M on Mutation { staffCreate(input: {}) { user { id } } }"
+    )
+    analysis = analyze_document(doc)
+    assert analysis.mutation_fields == ["staffCreate"]
+
+
+def test_blocklist_not_bypassed_by_fragment():
+    # The whole point of fix #2: a wrapped high-risk mutation is still blocked.
+    policy = PolicyConfig(mode=Mode.READ_WRITE, blocked_mutations={"staffCreate"})
+    doc = "mutation { ... on Mutation { staffCreate(input: {}) { user { id } } } }"
+    with pytest.raises(ToolError, match="blocked by the current safety policy"):
+        assert_mutation_allowed(doc, policy)
+
+
 def test_analyze_invalid_syntax():
     with pytest.raises(ToolError, match="Invalid GraphQL syntax"):
         analyze_document("query { products(")

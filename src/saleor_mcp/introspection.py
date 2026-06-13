@@ -7,6 +7,7 @@ compose queries and mutations.
 
 import logging
 import os
+from collections import OrderedDict
 from pathlib import Path
 from typing import Any
 
@@ -32,10 +33,31 @@ from .gql_client import SaleorGraphQLError, execute_graphql
 
 logger = logging.getLogger(__name__)
 
-# Schema is identical per Saleor instance, so cache it by API URL.
-_schema_cache: dict[str, GraphQLSchema] = {}
+# Schema is identical per Saleor instance, so cache it by API URL. The cache is a
+# bounded LRU because, on a hosted endpoint, the API URL is client-supplied: an
+# unbounded dict would let anyone exhaust memory by sending many distinct URLs.
+_SCHEMA_CACHE_MAXSIZE = 128
+_schema_cache: "OrderedDict[str, GraphQLSchema]" = OrderedDict()
+
+# Bundled SDL is static, so memoise it by resolved path to avoid re-parsing ~45k
+# lines on every introspection fallback.
+_bundled_schema_cache: dict[str, GraphQLSchema] = {}
 
 _MAX_RESULTS = 50
+
+
+def _schema_cache_get(key: str) -> GraphQLSchema | None:
+    schema = _schema_cache.get(key)
+    if schema is not None:
+        _schema_cache.move_to_end(key)
+    return schema
+
+
+def _schema_cache_set(key: str, schema: GraphQLSchema) -> None:
+    _schema_cache[key] = schema
+    _schema_cache.move_to_end(key)
+    while len(_schema_cache) > _SCHEMA_CACHE_MAXSIZE:
+        _schema_cache.popitem(last=False)
 
 
 def _bundled_schema_path() -> Path:
@@ -47,8 +69,14 @@ def _bundled_schema_path() -> Path:
 
 def _load_bundled_schema() -> GraphQLSchema:
     path = _bundled_schema_path()
+    key = str(path)
+    cached = _bundled_schema_cache.get(key)
+    if cached is not None:
+        return cached
     sdl = path.read_text(encoding="utf-8")
-    return build_schema(sdl, assume_valid=True)
+    schema = build_schema(sdl, assume_valid=True)
+    _bundled_schema_cache[key] = schema
+    return schema
 
 
 async def get_schema(config: SaleorConfig | None = None) -> GraphQLSchema:
@@ -56,13 +84,17 @@ async def get_schema(config: SaleorConfig | None = None) -> GraphQLSchema:
 
     Tries live introspection first (so it matches the user's Saleor version), then
     falls back to the bundled ``schema.graphql``.
+
+    Only a successful live introspection is cached per instance. The bundled fallback
+    is intentionally not cached against the API URL, so a transient introspection
+    failure cannot pin a generic schema to that instance for the rest of the process.
     """
     config = config or get_saleor_config()
     cache_key = config.api_url
-    if cache_key in _schema_cache:
-        return _schema_cache[cache_key]
+    cached = _schema_cache_get(cache_key)
+    if cached is not None:
+        return cached
 
-    schema: GraphQLSchema | None = None
     try:
         body = await execute_graphql(
             get_introspection_query(descriptions=True), config=config
@@ -70,16 +102,13 @@ async def get_schema(config: SaleorConfig | None = None) -> GraphQLSchema:
         data = body.get("data")
         if data:
             schema = build_client_schema(data)
-        else:
-            logger.warning("Introspection returned no data: %s", body.get("errors"))
+            _schema_cache_set(cache_key, schema)
+            return schema
+        logger.warning("Introspection returned no data: %s", body.get("errors"))
     except SaleorGraphQLError as exc:
         logger.warning("Live introspection failed, falling back to bundled SDL: %s", exc)
 
-    if schema is None:
-        schema = _load_bundled_schema()
-
-    _schema_cache[cache_key] = schema
-    return schema
+    return _load_bundled_schema()
 
 
 def _type_kind(type_: Any) -> str:

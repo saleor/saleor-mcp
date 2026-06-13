@@ -5,8 +5,12 @@ from dataclasses import dataclass, field
 from fastmcp.exceptions import ToolError
 from graphql import (
     FieldNode,
+    FragmentDefinitionNode,
+    FragmentSpreadNode,
+    InlineFragmentNode,
     OperationDefinitionNode,
     OperationType,
+    SelectionSetNode,
     parse,
 )
 from graphql.error import GraphQLSyntaxError
@@ -36,12 +40,35 @@ class DocumentAnalysis:
         return OperationType.SUBSCRIPTION in self.operation_types
 
 
-def _root_field_names(operation: OperationDefinitionNode) -> list[str]:
-    return [
-        selection.name.value
-        for selection in operation.selection_set.selections
-        if isinstance(selection, FieldNode)
-    ]
+def _root_field_names(
+    operation: OperationDefinitionNode,
+    fragments: dict[str, FragmentDefinitionNode],
+) -> list[str]:
+    """Return an operation's root field names.
+
+    Inline fragments and fragment spreads are resolved so that a blocked mutation
+    cannot be hidden from the policy by wrapping it, e.g.
+    ``mutation { ... on Mutation { staffCreate { ... } } }``.
+    """
+    names: list[str] = []
+
+    def _walk(selection_set: SelectionSetNode, seen: frozenset[str]) -> None:
+        for selection in selection_set.selections:
+            if isinstance(selection, FieldNode):
+                names.append(selection.name.value)
+            elif isinstance(selection, InlineFragmentNode):
+                _walk(selection.selection_set, seen)
+            elif isinstance(selection, FragmentSpreadNode):
+                fragment_name = selection.name.value
+                # Guard against cyclic fragment spreads.
+                if fragment_name in seen:
+                    continue
+                fragment = fragments.get(fragment_name)
+                if fragment is not None:
+                    _walk(fragment.selection_set, seen | {fragment_name})
+
+    _walk(operation.selection_set, frozenset())
+    return names
 
 
 def analyze_document(query: str) -> DocumentAnalysis:
@@ -54,6 +81,12 @@ def analyze_document(query: str) -> DocumentAnalysis:
     except GraphQLSyntaxError as exc:
         raise ToolError(f"Invalid GraphQL syntax: {exc}") from exc
 
+    fragments = {
+        definition.name.value: definition
+        for definition in document.definitions
+        if isinstance(definition, FragmentDefinitionNode)
+    }
+
     analysis = DocumentAnalysis()
     for definition in document.definitions:
         if not isinstance(definition, OperationDefinitionNode):
@@ -61,9 +94,9 @@ def analyze_document(query: str) -> DocumentAnalysis:
         analysis.operation_count += 1
         analysis.operation_types.add(definition.operation)
         if definition.operation is OperationType.MUTATION:
-            analysis.mutation_fields.extend(_root_field_names(definition))
+            analysis.mutation_fields.extend(_root_field_names(definition, fragments))
         elif definition.operation is OperationType.QUERY:
-            analysis.query_fields.extend(_root_field_names(definition))
+            analysis.query_fields.extend(_root_field_names(definition, fragments))
 
     if analysis.operation_count == 0:
         raise ToolError(

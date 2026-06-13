@@ -209,6 +209,10 @@ async def connection_info(ctx: Context) -> dict[str, Any]:
     Call this first to learn which Saleor instance you are connected to, what the
     authenticated user/app is allowed to do, and which write operations the server
     will permit. Use it to explain up front what is and isn't possible.
+
+    Note: 'mode', 'writesEnabled' and 'blockedMutations' reflect the server-wide
+    safety policy (configured via environment variables), not anything specific to
+    this token. The token's own permissions remain the final authority.
     """
     config = get_saleor_config()
     policy = get_policy_config()
