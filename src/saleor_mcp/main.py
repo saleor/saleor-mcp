@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 from fastmcp import FastMCP
 from fastmcp.server.middleware.timing import DetailedTimingMiddleware
@@ -76,8 +77,10 @@ async def index(request: Request):
     )
 
 
+_STATIC_DIR = Path(__file__).resolve().parent / "static"
+
 app = mcp.http_app(stateless_http=True)
-app.mount("/static", StaticFiles(directory="src/saleor_mcp/static"), name="static")
+app.mount("/static", StaticFiles(directory=_STATIC_DIR), name="static")
 
 
 def main():

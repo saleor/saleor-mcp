@@ -113,11 +113,25 @@ to prevent accidental, hard-to-reverse changes.
 
 ### `ALLOWED_DOMAIN_PATTERN`
 
-A regex restricting which API domains the server may connect to. When set, the resolved
-API URL is validated against it. Special characters must be escaped.
+A regex restricting which API URLs the server may connect to. The resolved API URL
+must be a well-formed `http(s)` URL, and when this is set the **full URL** must fully
+match the pattern (it is anchored at both ends). Special characters must be escaped.
 
-Example: `https:\/\/.*\.saleor\.cloud\/graphql\/` allows any `saleor.cloud` subdomain
-with the `/graphql/` path.
+Example: `^https://([A-Za-z0-9._-]+)\.saleor\.cloud/graphql/$` allows any `saleor.cloud`
+subdomain on the `/graphql/` path.
+
+> **Use a restrictive character class for the host — never `.*`.** Because `.*` also
+> matches `/`, a pattern like `^https://.*\.saleor\.cloud/` is spoofable by an
+> attacker-controlled path such as `https://evil.example/.saleor.cloud/`, turning the
+> server into an SSRF relay. The `[A-Za-z0-9._-]+` class above cannot cross the
+> host/path boundary, so path-, userinfo- (`@`) and suffix-based spoofs are all
+> rejected.
+
+> **Production requirement:** on a hosted/public endpoint the API URL is supplied by
+> the client, so leaving this unset turns the server into an SSRF relay (it will
+> connect to any host, including internal addresses). Always set it in production. It
+> may be left unset only for local stdio use, where the URL is operator-controlled; the
+> server logs a warning when it is unset.
 
 ## Installation (from source)
 

@@ -3,6 +3,7 @@ import os
 import re
 from dataclasses import dataclass, field
 from enum import StrEnum
+from urllib.parse import urlparse
 
 from fastmcp.exceptions import ToolError
 from fastmcp.server.dependencies import get_http_headers
@@ -10,6 +11,12 @@ from fastmcp.server.dependencies import get_http_headers
 LOGLEVEL = os.environ.get("LOGLEVEL", "INFO").upper()
 logging.basicConfig(level=LOGLEVEL)
 logging.getLogger("mcp.server.streamable_http").setLevel(logging.WARNING)
+
+logger = logging.getLogger(__name__)
+
+# Whether we have already warned that no domain allowlist is configured. The warning
+# is a once-per-process nudge, not a per-request log line.
+_warned_no_domain_pattern = False
 
 
 class Mode(StrEnum):
@@ -82,19 +89,47 @@ def _parse_mutation_set(raw: str | None) -> set[str]:
     return {item.strip() for item in raw.split(",") if item.strip()}
 
 
-def validate_api_url(url, pattern):
-    """Validate if the given URL matches the allowed domain pattern.
+def validate_api_url(url: str, pattern: str | None) -> bool:
+    r"""Validate the Saleor API URL.
 
-    Pattern should be a properly escaped regular expression.
+    Always requires a well-formed ``http(s)`` URL with a host - this rejects
+    ``file://``, host-less and otherwise malformed values regardless of ``pattern``.
+    When ``pattern`` is set, the **full URL** must fully match it (via
+    :func:`re.fullmatch`, so the pattern is implicitly anchored at both ends).
+
+    The pattern must use a restrictive character class for the host, e.g.
+    ``^https://([A-Za-z0-9._-]+)\.saleor\.cloud/graphql/$``. Never use ``.*`` for the
+    host: because ``.*`` also matches ``/``, a pattern like
+    ``^https://.*\.saleor\.cloud/`` is spoofable by an attacker-controlled path such as
+    ``https://evil.example/.saleor.cloud/`` and would turn the server into an SSRF
+    relay.
     """
-    # Add anchors if not present
-    if not pattern.startswith("^"):
-        pattern = "^" + pattern
+    try:
+        parsed = urlparse(url)
+    except ValueError:
+        return False
 
-    if not pattern.endswith("$"):
-        pattern = pattern + "$"
+    if parsed.scheme not in ("http", "https") or not parsed.hostname:
+        return False
 
-    return bool(re.match(pattern, url))
+    if not pattern:
+        return True
+
+    return bool(re.fullmatch(pattern, url))
+
+
+def _warn_no_domain_restriction() -> None:
+    """Warn once that the server will connect to any host the client supplies."""
+    global _warned_no_domain_pattern
+    if _warned_no_domain_pattern:
+        return
+    _warned_no_domain_pattern = True
+    logger.warning(
+        "ALLOWED_DOMAIN_PATTERN is not set: the server will connect to ANY api URL "
+        "supplied by the client. This is fine for local stdio use, but it MUST be set "
+        "in any hosted/public deployment to prevent the server being used as an SSRF "
+        "relay."
+    )
 
 
 @dataclass
@@ -161,8 +196,11 @@ def get_saleor_config() -> SaleorConfig:
             "SALEOR_API_URL environment variable (stdio)."
         )
 
-    if allowed_domain_pattern and not validate_api_url(api_url, allowed_domain_pattern):
+    if not validate_api_url(api_url, allowed_domain_pattern):
         raise ToolError(f"API URL '{api_url}' is not allowed")
+
+    if not allowed_domain_pattern:
+        _warn_no_domain_restriction()
 
     auth_token = headers.get("x-saleor-auth-token") or os.getenv("SALEOR_AUTH_TOKEN")
     if not auth_token:
