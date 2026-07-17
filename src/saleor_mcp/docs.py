@@ -168,7 +168,8 @@ async def extract_tool_info(router: FastMCP) -> list[dict[str, Any]]:
     tools = []
 
     tool: Tool
-    for tool_name, tool in (await router.get_tools()).items():
+    for tool in await router.list_tools():
+        tool_name = tool.name
         # Warn if we didn't manage to generate docs due to only supporting
         # tools that invoke functions. If user sees this warning, they might
         # want to consider implementing logic for their tool.
@@ -219,9 +220,10 @@ async def introspect_from_mcp_server(mcp_server: FastMCP) -> list[dict[str, Any]
     """
     all_tools = []
 
-    # Get tools from the main server itself
-    main_tools = await extract_tool_info(mcp_server)
-    all_tools.extend(main_tools)
+    for provider in mcp_server.providers:
+        server = getattr(provider, "server", None)
+        if server is not None:
+            all_tools.extend(await extract_tool_info(server))
 
     # Sort tools by name for consistent ordering
     all_tools.sort(key=lambda x: x["name"])
