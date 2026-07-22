@@ -2,6 +2,20 @@
 
 A Model Context Protocol (MCP) server for Saleor Commerce that provides integration with AI assistants and tools.
 
+## Tools
+
+Saleor MCP provides predefined, read-only operations for:
+
+- Listing products
+- Listing stock
+- Fetching warehouse details
+- Listing orders
+- Counting orders
+- Listing customers
+- Listing channels
+
+Currently, Saleor MCP doesn't support any mutations. You can find a list of all the available tools [here](https://mcp.saleor.app/).
+
 ## Getting Started
 
 The Saleor MCP server allows AI assistants to interact with Saleor instance in order to fetch data about products, customers, and orders. The MCP is read-only - it doesn't trigger any mutations in the Saleor API.
