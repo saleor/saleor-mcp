@@ -2,6 +2,13 @@
 
 from .async_base_client import AsyncBaseClient
 from .base_model import BaseModel, Upload
+from .channel_create import (
+    ChannelCreate,
+    ChannelCreateChannelCreate,
+    ChannelCreateChannelCreateChannel,
+    ChannelCreateChannelCreateChannelDefaultCountry,
+    ChannelCreateChannelCreateErrors,
+)
 from .client import Client
 from .count_orders import CountOrders, CountOrdersOrders
 from .enums import (
@@ -543,6 +550,43 @@ from .list_stocks import (
     ListStocksStocksEdgesNodeWarehouse,
     ListStocksStocksPageInfo,
 )
+from .product_channel_listing_update import (
+    ProductChannelListingUpdate,
+    ProductChannelListingUpdateProductChannelListingUpdate,
+    ProductChannelListingUpdateProductChannelListingUpdateErrors,
+    ProductChannelListingUpdateProductChannelListingUpdateProduct,
+    ProductChannelListingUpdateProductChannelListingUpdateProductChannelListings,
+    ProductChannelListingUpdateProductChannelListingUpdateProductChannelListingsChannel,
+)
+from .product_create import (
+    ProductCreate,
+    ProductCreateProductCreate,
+    ProductCreateProductCreateErrors,
+    ProductCreateProductCreateProduct,
+    ProductCreateProductCreateProductProductType,
+)
+from .product_type_create import (
+    ProductTypeCreate,
+    ProductTypeCreateProductTypeCreate,
+    ProductTypeCreateProductTypeCreateErrors,
+    ProductTypeCreateProductTypeCreateProductType,
+)
+from .product_variant_channel_listing_update import (
+    ProductVariantChannelListingUpdate,
+    ProductVariantChannelListingUpdateProductVariantChannelListingUpdate,
+    ProductVariantChannelListingUpdateProductVariantChannelListingUpdateErrors,
+    ProductVariantChannelListingUpdateProductVariantChannelListingUpdateVariant,
+    ProductVariantChannelListingUpdateProductVariantChannelListingUpdateVariantChannelListings,
+    ProductVariantChannelListingUpdateProductVariantChannelListingUpdateVariantChannelListingsChannel,
+    ProductVariantChannelListingUpdateProductVariantChannelListingUpdateVariantChannelListingsPrice,
+)
+from .product_variant_create import (
+    ProductVariantCreate,
+    ProductVariantCreateProductVariantCreate,
+    ProductVariantCreateProductVariantCreateErrors,
+    ProductVariantCreateProductVariantCreateProductVariant,
+    ProductVariantCreateProductVariantCreateProductVariantProduct,
+)
 from .warehouse_details import (
     WarehouseDetails,
     WarehouseDetailsWarehouse,
@@ -615,6 +659,11 @@ __all__ = [
     "CategorySortField",
     "CategorySortingInput",
     "CategoryWhereInput",
+    "ChannelCreate",
+    "ChannelCreateChannelCreate",
+    "ChannelCreateChannelCreateChannel",
+    "ChannelCreateChannelCreateChannelDefaultCountry",
+    "ChannelCreateChannelCreateErrors",
     "ChannelCreateInput",
     "ChannelDeleteInput",
     "ChannelErrorCode",
@@ -911,8 +960,19 @@ __all__ = [
     "ProductBulkTranslateInput",
     "ProductChannelListingAddInput",
     "ProductChannelListingCreateInput",
+    "ProductChannelListingUpdate",
     "ProductChannelListingUpdateInput",
+    "ProductChannelListingUpdateProductChannelListingUpdate",
+    "ProductChannelListingUpdateProductChannelListingUpdateErrors",
+    "ProductChannelListingUpdateProductChannelListingUpdateProduct",
+    "ProductChannelListingUpdateProductChannelListingUpdateProductChannelListings",
+    "ProductChannelListingUpdateProductChannelListingUpdateProductChannelListingsChannel",
+    "ProductCreate",
     "ProductCreateInput",
+    "ProductCreateProductCreate",
+    "ProductCreateProductCreateErrors",
+    "ProductCreateProductCreateProduct",
+    "ProductCreateProductCreateProductProductType",
     "ProductErrorCode",
     "ProductFieldEnum",
     "ProductFilterInput",
@@ -925,6 +985,10 @@ __all__ = [
     "ProductStockFilterInput",
     "ProductTranslateErrorCode",
     "ProductTypeConfigurable",
+    "ProductTypeCreate",
+    "ProductTypeCreateProductTypeCreate",
+    "ProductTypeCreateProductTypeCreateErrors",
+    "ProductTypeCreateProductTypeCreateProductType",
     "ProductTypeEnum",
     "ProductTypeFilterInput",
     "ProductTypeInput",
@@ -936,8 +1000,20 @@ __all__ = [
     "ProductVariantBulkTranslateInput",
     "ProductVariantBulkUpdateInput",
     "ProductVariantChannelListingAddInput",
+    "ProductVariantChannelListingUpdate",
     "ProductVariantChannelListingUpdateInput",
+    "ProductVariantChannelListingUpdateProductVariantChannelListingUpdate",
+    "ProductVariantChannelListingUpdateProductVariantChannelListingUpdateErrors",
+    "ProductVariantChannelListingUpdateProductVariantChannelListingUpdateVariant",
+    "ProductVariantChannelListingUpdateProductVariantChannelListingUpdateVariantChannelListings",
+    "ProductVariantChannelListingUpdateProductVariantChannelListingUpdateVariantChannelListingsChannel",
+    "ProductVariantChannelListingUpdateProductVariantChannelListingUpdateVariantChannelListingsPrice",
+    "ProductVariantCreate",
     "ProductVariantCreateInput",
+    "ProductVariantCreateProductVariantCreate",
+    "ProductVariantCreateProductVariantCreateErrors",
+    "ProductVariantCreateProductVariantCreateProductVariant",
+    "ProductVariantCreateProductVariantCreateProductVariantProduct",
     "ProductVariantFilterInput",
     "ProductVariantInput",
     "ProductVariantSortField",

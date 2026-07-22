@@ -8,6 +8,7 @@ from saleor_mcp.docs import generate_html
 from saleor_mcp.tools import (
     channels_router,
     customers_router,
+    mutations_router,
     orders_router,
     products_router,
     utils_router,
@@ -17,6 +18,7 @@ mcp = FastMCP("Saleor MCP Server")
 mcp.add_middleware(DetailedTimingMiddleware())
 mcp.mount(channels_router)
 mcp.mount(customers_router)
+mcp.mount(mutations_router)
 mcp.mount(orders_router)
 mcp.mount(products_router)
 mcp.mount(utils_router)

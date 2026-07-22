@@ -1,0 +1,18 @@
+mutation ProductTypeCreate($input: ProductTypeInput!) {
+  productTypeCreate(input: $input) {
+    productType {
+      id
+      name
+      slug
+      isDigital
+      isShippingRequired
+      hasVariants
+    }
+    errors {
+      field
+      message
+      code
+    }
+  }
+}
+

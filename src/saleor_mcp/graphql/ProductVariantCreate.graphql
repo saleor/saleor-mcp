@@ -1,0 +1,19 @@
+mutation ProductVariantCreate($input: ProductVariantCreateInput!) {
+  productVariantCreate(input: $input) {
+    productVariant {
+      id
+      name
+      sku
+      product {
+        id
+        name
+      }
+    }
+    errors {
+      field
+      message
+      code
+    }
+  }
+}
+
