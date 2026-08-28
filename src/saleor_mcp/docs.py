@@ -35,15 +35,11 @@ def get_version_from_pyproject() -> str:
     return "unknown"
 
 
-async def generate_html(output_path: str | None = None) -> str:
+async def generate_html() -> str:
     """Generate HTML documentation from tools.
 
     Automatically discovers all tools from the main MCP server and its mounted
     routers, eliminating the need to manually maintain a list of routers.
-
-    Args:
-        output_path: Optional path to write the HTML file to.
-                    If None, returns the HTML string without writing.
 
     Returns:
         Generated HTML content as string.
@@ -68,12 +64,6 @@ async def generate_html(output_path: str | None = None) -> str:
         tools=tools,
         version=version,
     )
-
-    # Write to file if path provided
-    if output_path:
-        output_file = Path(output_path)
-        output_file.write_text(html_content, encoding="utf-8")
-        logger.info("Generated HTML documentation at: %s", output_file)
 
     return html_content
 

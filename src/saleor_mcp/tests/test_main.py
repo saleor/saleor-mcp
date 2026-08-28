@@ -16,9 +16,10 @@ def test_mcp_instance_creation():
 async def test_generate_html_includes_mounted_tools():
     html = await generate_html()
 
-    assert '<span class="tool-name">Channels</span>' in html
-    assert '<span class="tool-name">Orders</span>' in html
-    assert '<span class="tool-name">Products</span>' in html
+    assert '<span class="tool-name">Connection Info</span>' in html
+    assert '<span class="tool-name">Introspect Schema</span>' in html
+    assert '<span class="tool-name">Run Mutation</span>' in html
+    assert '<span class="tool-name">Run Query</span>' in html
 
 
 @pytest.mark.asyncio
@@ -33,4 +34,4 @@ async def test_index_route_generates_docs_html():
     assert response.status_code == 200
     assert "text/html" in response.headers["content-type"]
     assert "default-src 'none'" in response.headers["content-security-policy"]
-    assert '<span class="tool-name">Channels</span>' in response.text
+    assert '<span class="tool-name">Run Query</span>' in response.text
