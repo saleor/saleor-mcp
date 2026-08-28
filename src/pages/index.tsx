@@ -28,7 +28,7 @@ const tools = [
     id: "run_mutation",
     name: "Run GraphQL Mutation",
     description:
-      "Executes GraphQL writes when the deployment policy allows them. High-risk operations remain blocked in read-write mode.",
+      "Executes GraphQL writes when the deployment policy allows them. Read-write mode permits only explicitly allowlisted mutations.",
     arguments: ["query (required)", "variables", "operation_name"],
   },
 ];

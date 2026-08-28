@@ -9,10 +9,10 @@ const mutation =
   'mutation { productCreate(input: {name: "x"}) { product { id } errors { field } } }';
 const dangerous = 'mutation { staffDelete(id: "1") { errors { field } } }';
 
-function policy(mode: PolicyConfig["mode"], blocked: string[] = []): PolicyConfig {
+function policy(mode: PolicyConfig["mode"], allowed: string[] = []): PolicyConfig {
   return {
     mode,
-    effectiveBlocklist: mode === "read_write" ? new Set(blocked) : new Set(),
+    allowedMutations: new Set(allowed),
   };
 }
 
@@ -51,16 +51,28 @@ describe("GraphQL policy", () => {
     );
   });
 
-  it("enforces read_only and the read_write blocklist", () => {
+  it("enforces read_only and a fail-closed read_write allowlist", () => {
     expect(() => assertMutationAllowed(mutation, policy("read_only"))).toThrow("read_only mode");
-    expect(() => assertMutationAllowed(dangerous, policy("read_write", ["staffDelete"]))).toThrow(
-      "blocked by the current safety policy",
+    expect(() => assertMutationAllowed(mutation, policy("read_write"))).toThrow(
+      "not in the deployment allowlist",
     );
     expect(
-      assertMutationAllowed(mutation, policy("read_write", ["staffDelete"])).mutationFields,
+      assertMutationAllowed(mutation, policy("read_write", ["productCreate"])).mutationFields,
     ).toEqual(["productCreate"]);
+    expect(assertMutationAllowed(dangerous, policy("unrestricted")).mutationFields).toEqual([
+      "staffDelete",
+    ]);
+  });
+
+  it("rejects every root mutation unless all are allowlisted", () => {
+    const several =
+      'mutation { productCreate(input: {name: "x"}) { product { id } } productDelete(id: "1") { product { id } } }';
+    expect(() => assertMutationAllowed(several, policy("read_write", ["productCreate"]))).toThrow(
+      "productDelete",
+    );
     expect(
-      assertMutationAllowed(dangerous, policy("unrestricted", ["staffDelete"])).mutationFields,
-    ).toEqual(["staffDelete"]);
+      assertMutationAllowed(several, policy("read_write", ["productCreate", "productDelete"]))
+        .mutationFields,
+    ).toEqual(["productCreate", "productDelete"]);
   });
 });

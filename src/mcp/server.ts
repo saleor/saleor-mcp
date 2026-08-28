@@ -177,8 +177,10 @@ export function createMcpServer(authData: AuthData): McpServer {
       return result({
         apiUrl: authData.saleorApiUrl,
         mode: policy.mode,
-        writesEnabled: policy.mode !== "read_only",
-        blockedMutations: [...policy.effectiveBlocklist].sort(),
+        writesEnabled:
+          policy.mode === "unrestricted" ||
+          (policy.mode === "read_write" && policy.allowedMutations.size > 0),
+        allowedMutations: policy.mode === "read_write" ? [...policy.allowedMutations].sort() : [],
         ...identity,
       });
     },

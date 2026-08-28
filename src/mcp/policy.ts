@@ -116,12 +116,12 @@ export function assertMutationAllowed(query: string, policy: PolicyConfig): Docu
     );
   }
 
-  const blocked = [
-    ...new Set(analysis.mutationFields.filter((name) => policy.effectiveBlocklist.has(name))),
+  const notAllowed = [
+    ...new Set(analysis.mutationFields.filter((name) => !policy.allowedMutations.has(name))),
   ].sort();
-  if (blocked.length > 0) {
+  if (policy.mode === "read_write" && notAllowed.length > 0) {
     throw new Error(
-      `The following mutation(s) are blocked by the current safety policy: ${blocked.join(", ")}. These are considered high-risk (identity, access control, apps or instance settings). To allow them, add them to SALEOR_MCP_ALLOWED_MUTATIONS or set SALEOR_MCP_MODE=unrestricted.`,
+      `The following mutation(s) are not in the deployment allowlist: ${notAllowed.join(", ")}. Add them to SALEOR_MCP_ALLOWED_MUTATIONS after reviewing their effects, or explicitly set SALEOR_MCP_MODE=unrestricted.`,
     );
   }
 

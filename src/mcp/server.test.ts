@@ -74,4 +74,72 @@ describe("Saleor MCP contract", () => {
     await client.close();
     await server.close();
   });
+
+  it("fails closed in read_write until a mutation is explicitly allowlisted", async () => {
+    vi.stubEnv("SALEOR_MCP_MODE", "read_write");
+    const { client, server } = await connectedClient();
+    const response = await client.callTool({
+      name: "run_mutation",
+      arguments: {
+        query: 'mutation { productCreate(input: {name: "x"}) { product { id } } }',
+      },
+    });
+    expect(response.isError).toBe(true);
+    expect(JSON.stringify(response.content)).toContain("not in the deployment allowlist");
+    await client.close();
+    await server.close();
+  });
+
+  it("reports that writes are disabled when the read_write allowlist is empty", async () => {
+    vi.stubEnv("SALEOR_MCP_MODE", "read_write");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            data: {
+              app: { name: "Saleor MCP", permissions: [] },
+              shop: { name: "Test shop", version: "3.21" },
+            },
+          }),
+          { status: 200 },
+        ),
+      ),
+    );
+    const { client, server } = await connectedClient();
+    const response = await client.callTool({ name: "connection_info" });
+    expect(response.structuredContent).toMatchObject({
+      mode: "read_write",
+      writesEnabled: false,
+      allowedMutations: [],
+    });
+    await client.close();
+    await server.close();
+  });
+
+  it("runs an explicitly allowlisted mutation", async () => {
+    vi.stubEnv("SALEOR_MCP_MODE", "read_write");
+    vi.stubEnv("SALEOR_MCP_ALLOWED_MUTATIONS", "productCreate");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ data: { productCreate: { product: { id: "1" } } } }), {
+          status: 200,
+        }),
+      ),
+    );
+    const { client, server } = await connectedClient();
+    const response = await client.callTool({
+      name: "run_mutation",
+      arguments: {
+        query: 'mutation { productCreate(input: {name: "x"}) { product { id } } }',
+      },
+    });
+    expect(response.isError).not.toBe(true);
+    expect(response.structuredContent).toEqual({
+      data: { productCreate: { product: { id: "1" } } },
+    });
+    await client.close();
+    await server.close();
+  });
 });

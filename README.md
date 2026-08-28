@@ -79,17 +79,19 @@ deploy the repository normally.
 
 ## Safety policy
 
-`SALEOR_MCP_MODE` keeps the `v2` deployment-wide behavior:
+`SALEOR_MCP_MODE` controls the deployment-wide write policy. Unlike the original `v2`
+denylist, `read_write` now fails closed:
 
-| Mode           | Behavior                                                          |
-| -------------- | ----------------------------------------------------------------- |
-| `read_only`    | Queries only. This is the default.                                |
-| `read_write`   | Mutations are allowed except for the high-risk built-in denylist. |
-| `unrestricted` | Any mutation allowed by the installed app's permissions can run.  |
+| Mode           | Behavior                                                         |
+| -------------- | ---------------------------------------------------------------- |
+| `read_only`    | Queries only. This is the default.                               |
+| `read_write`   | Only mutations explicitly named in the deployment allowlist run. |
+| `unrestricted` | Any mutation allowed by the installed app's permissions can run. |
 
-Use comma-separated `SALEOR_MCP_ALLOWED_MUTATIONS` to remove names from the default
-denylist and `SALEOR_MCP_BLOCKED_MUTATIONS` to add names. The installed app's Saleor
-permissions are always the final ceiling.
+Set comma-separated `SALEOR_MCP_ALLOWED_MUTATIONS` when using `read_write`. An empty
+allowlist permits no mutations, and new Saleor mutations stay disabled until they are
+explicitly reviewed and added. `unrestricted` is an explicit escape hatch for trusted
+deployments. The installed app's Saleor permissions are always the final ceiling.
 
 ## Development
 
