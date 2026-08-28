@@ -5,7 +5,7 @@ description = "MCP server for Saleor Commerce"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "fastmcp>=2.11.0,<3",
+    "fastmcp>=3,<4",
     "uvicorn>=0.24.0",
     "httpx>=0.25.0",
     "pydantic>=2.5.0",
