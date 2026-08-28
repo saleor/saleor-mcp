@@ -1,0 +1,77 @@
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+import { createMcpServer } from "./server";
+
+const authData = {
+  appId: "app",
+  saleorApiUrl: "https://shop.saleor.cloud/graphql/",
+  token: "app-token",
+};
+
+async function connectedClient() {
+  const server = createMcpServer(authData);
+  const client = new Client({ name: "test-client", version: "1.0.0" });
+  const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+  await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
+  return { client, server };
+}
+
+describe("Saleor MCP contract", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
+  });
+
+  it("exposes the four v2 tools, schema resource, and prompt", async () => {
+    const { client, server } = await connectedClient();
+    await expect(client.listTools()).resolves.toMatchObject({
+      tools: expect.arrayContaining([
+        expect.objectContaining({ name: "connection_info" }),
+        expect.objectContaining({ name: "introspect_schema" }),
+        expect.objectContaining({ name: "run_query" }),
+        expect.objectContaining({ name: "run_mutation" }),
+      ]),
+    });
+    await expect(client.listResources()).resolves.toMatchObject({
+      resources: [expect.objectContaining({ uri: "saleor://schema/graphql" })],
+    });
+    await expect(client.listPrompts()).resolves.toMatchObject({
+      prompts: [expect.objectContaining({ name: "explore_saleor" })],
+    });
+    await client.close();
+    await server.close();
+  });
+
+  it("returns the raw GraphQL data and errors as structured content", async () => {
+    const body = { data: { products: { edges: [] } }, errors: [{ message: "partial" }] };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(new Response(JSON.stringify(body), { status: 200 })),
+    );
+    const { client, server } = await connectedClient();
+    const response = await client.callTool({
+      name: "run_query",
+      arguments: { query: "query { products(first: 1) { edges { node { id } } } }" },
+    });
+    expect(response.structuredContent).toEqual(body);
+    await client.close();
+    await server.close();
+  });
+
+  it("keeps mutations read-only by default", async () => {
+    vi.stubEnv("SALEOR_MCP_MODE", "read_only");
+    const { client, server } = await connectedClient();
+    const response = await client.callTool({
+      name: "run_mutation",
+      arguments: {
+        query: 'mutation { productCreate(input: {name: "x"}) { product { id } errors { field } } }',
+      },
+    });
+    expect(response.isError).toBe(true);
+    expect(JSON.stringify(response.content)).toContain("read_only mode");
+    await client.close();
+    await server.close();
+  });
+});

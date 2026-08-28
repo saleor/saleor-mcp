@@ -1,0 +1,66 @@
+import { OperationTypeNode } from "graphql";
+import { describe, expect, it } from "vitest";
+
+import type { PolicyConfig } from "./config";
+import { analyzeDocument, assertMutationAllowed, assertQueryAllowed } from "./policy";
+
+const query = "query { products(first: 1) { edges { node { id } } } }";
+const mutation =
+  'mutation { productCreate(input: {name: "x"}) { product { id } errors { field } } }';
+const dangerous = 'mutation { staffDelete(id: "1") { errors { field } } }';
+
+function policy(mode: PolicyConfig["mode"], blocked: string[] = []): PolicyConfig {
+  return {
+    mode,
+    effectiveBlocklist: mode === "read_write" ? new Set(blocked) : new Set(),
+  };
+}
+
+describe("GraphQL policy", () => {
+  it("classifies query and mutation root fields", () => {
+    const read = analyzeDocument(query);
+    expect(read.operationTypes.has(OperationTypeNode.QUERY)).toBe(true);
+    expect(read.queryFields).toEqual(["products"]);
+    expect(analyzeDocument(mutation).mutationFields).toEqual(["productCreate"]);
+  });
+
+  it("resolves inline fragments and fragment spreads", () => {
+    expect(
+      analyzeDocument("mutation { ... on Mutation { staffCreate(input: {}) { user { id } } } }")
+        .mutationFields,
+    ).toEqual(["staffCreate"]);
+    expect(
+      analyzeDocument(
+        "mutation { ...M } fragment M on Mutation { staffCreate(input: {}) { user { id } } }",
+      ).mutationFields,
+    ).toEqual(["staffCreate"]);
+  });
+
+  it("rejects invalid and non-executable documents", () => {
+    expect(() => analyzeDocument("query { products(")).toThrow("Invalid GraphQL syntax");
+    expect(() => analyzeDocument("fragment F on Product { id }")).toThrow(
+      "no executable operation",
+    );
+  });
+
+  it("keeps reads and writes separate", () => {
+    expect(() => assertQueryAllowed(mutation)).toThrow("run_mutation");
+    expect(() => assertMutationAllowed(query, policy("read_write"))).toThrow("no mutation");
+    expect(() => assertQueryAllowed("subscription { event { issuedAt } }")).toThrow(
+      "Subscriptions",
+    );
+  });
+
+  it("enforces read_only and the read_write blocklist", () => {
+    expect(() => assertMutationAllowed(mutation, policy("read_only"))).toThrow("read_only mode");
+    expect(() => assertMutationAllowed(dangerous, policy("read_write", ["staffDelete"]))).toThrow(
+      "blocked by the current safety policy",
+    );
+    expect(
+      assertMutationAllowed(mutation, policy("read_write", ["staffDelete"])).mutationFields,
+    ).toEqual(["productCreate"]);
+    expect(
+      assertMutationAllowed(dangerous, policy("unrestricted", ["staffDelete"])).mutationFields,
+    ).toEqual(["staffDelete"]);
+  });
+});

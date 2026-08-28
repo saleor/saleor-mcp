@@ -121,3 +121,15 @@ dmypy.json
 .uv/
 
 .vscode/
+
+# TypeScript / Next.js
+node_modules/
+.next/
+out/
+coverage/
+*.tsbuildinfo
+.saleor-app-auth.json
+.env*.local
+.vercel/
+.DS_Store
+.idea/

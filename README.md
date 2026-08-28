@@ -1,222 +1,127 @@
 # Saleor MCP Server
 
-A Model Context Protocol (MCP) server for Saleor Commerce. It exposes your Saleor
-GraphQL API to AI assistants (Claude Code, Cursor, VS Code / Copilot, etc.) through a
-small set of **generic** tools, instead of a fixed catalogue of pre-built operations.
+A hosted Model Context Protocol (MCP) server for Saleor Commerce, packaged as a
+multi-tenant Saleor App. It gives AI assistants four generic tools for discovering and
+using a Saleor GraphQL API instead of maintaining a fixed catalogue of actions.
 
-The assistant becomes the harness: it discovers the schema and runs arbitrary GraphQL
-queries and mutations on your behalf. What it can actually do is bounded by two things:
+This TypeScript app is a feature-parity migration of the `v2` MCP. The intentional
+changes are:
 
-1. **Your access token's permissions** — the server only ever acts as the token you
-   give it.
-2. **The server's safety policy** — a configurable mode plus a denylist of high-risk
-   mutations (see [Safety policy](#safety-policy)).
+- Saleor installs the app and gives its token directly to the server. Users no longer
+  paste Saleor URLs or tokens into an MCP client.
+- The MCP transport is hosted Streamable HTTP at `/mcp`. Local stdio is not included.
+- The runtime and app boilerplate come from the cleaned Saleor app template on Next.js.
 
-## Tools
+## MCP contract
 
-| Tool | Purpose |
-| --- | --- |
-| `connection_info` | Report the connected instance, the token's permissions and the active safety policy. Call this first. |
-| `introspect_schema` | Explore the schema in small slices: `search`, `list_operations`, `describe_operation`, `describe_type`. |
-| `run_query` | Execute a read-only GraphQL query. Mutations are rejected. |
-| `run_mutation` | Execute a GraphQL mutation, subject to the safety policy. |
+| Tool                | Purpose                                                             |
+| ------------------- | ------------------------------------------------------------------- |
+| `connection_info`   | Report the installation, app permissions, and active safety policy. |
+| `introspect_schema` | Search and describe schema types, queries, and mutations.           |
+| `run_query`         | Run read-only GraphQL. Mutation documents are rejected.             |
+| `run_mutation`      | Run GraphQL mutations subject to the safety policy.                 |
 
-It also exposes the full schema as an MCP resource (`saleor://schema/graphql`) and an
-`explore_saleor` prompt describing the discover → query → mutate workflow.
+The server also exposes the `saleor://schema/graphql` resource and the
+`explore_saleor` prompt. GraphQL tool results preserve Saleor's raw `data` and `errors`.
 
-## Connecting
+## How authentication works
 
-What the assistant can do is bounded by two things: your **token's permissions** and
-the server's **safety policy** (see [Safety policy](#safety-policy)).
+1. Saleor reads `/api/manifest` and posts the app token to `/api/register` during
+   installation.
+2. The standard Saleor Auth Persistence Layer (APL) stores the app token. It never
+   reaches the browser or MCP client.
+3. A Dashboard user with `MANAGE_APPS` opens the installed app and copies an MCP
+   configuration containing a separate signed installation credential.
+4. Requests send that credential as `Authorization: Bearer <credential>` to `/mcp`.
+5. The server verifies the signature, loads the matching installation from the APL,
+   checks that its app ID still matches, and uses the server-side app token for Saleor.
 
-There are two ways to run the server:
+Uninstalling or reinstalling the app invalidates the old connection because the stored
+installation or app ID changes. Rotating `MCP_CREDENTIAL_SECRET` invalidates every
+issued MCP connection for that deployment.
 
-- **Local install (recommended)** — runs on your machine over **stdio**. Your token
-  only ever travels from your machine directly to your own Saleor instance.
-- **Hosted** — a shared **Streamable HTTP** endpoint, handy for a quick read-only try
-  without installing anything. Your token transits the hosted server, so it runs
-  `read_only` by default.
+## Install in Saleor
 
-Connection settings come from environment variables (local/stdio) or HTTP headers
-(hosted); headers take precedence when both are present:
+Deploy the app, then use this URL in **Dashboard → Apps → Install external app**:
 
-| Setting | Environment variable | HTTP header |
-| --- | --- | --- |
-| Saleor GraphQL URL | `SALEOR_API_URL` | `X-Saleor-API-URL` |
-| Saleor auth token | `SALEOR_AUTH_TOKEN` | `X-Saleor-Auth-Token` |
-
-### Get a Saleor token
-
-The token's permissions are the ceiling on what the assistant can do, so create one
-scoped to exactly what you want to allow. **Prefer an App token:** in your Saleor
-Dashboard create an App, grant it only the permissions
-you are comfortable giving an AI assistant, and copy its access token. App tokens are
-long-lived, scoped, and revocable — deactivate or delete the App to revoke access.
-
-Avoid using a staff login token (the JWT from `tokenCreate`) here, as it expires after a
-few minutes.
-
-### Local install (stdio) — recommended
-
-**Prerequisite:** install [uv](https://docs.astral.sh/uv/). It is a single binary and
-also manages Python for you, so nothing else is required:
-
-```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh   # macOS/Linux
-# or: brew install uv   /   winget install astral-sh.uv
+```text
+https://your-deployment.example/api/manifest
 ```
 
-Then point your MCP client at the server with `uvx`, which fetches and runs it on
-demand. The client launches the command for you — you only add the config
-block. Example Claude Code configuration (`.mcp.json` or `claude mcp add`):
+After installation, open **Saleor MCP** from Apps. A user with `MANAGE_APPS` can copy
+the ready-to-use HTTP MCP configuration. The fixed manifest permission set covers
+ordinary catalogue, checkout, order, discount, gift-card, content, shipping, tax,
+payment, and translation work. It deliberately excludes staff/customer identity,
+app management, plugins, channels, observability, and instance-wide settings.
 
-```json
-{
-  "mcpServers": {
-    "saleor": {
-      "command": "uvx",
-      "args": [
-        "--from",
-        "git+https://github.com/saleor/saleor-mcp",
-        "saleor-mcp"
-      ],
-      "env": {
-        "SALEOR_MCP_TRANSPORT": "stdio",
-        "SALEOR_API_URL": "https://example.saleor.cloud/graphql/",
-        "SALEOR_AUTH_TOKEN": "<your token>",
-        "SALEOR_MCP_MODE": "read_write"
-      }
-    }
-  }
-}
-```
+## Deployment configuration
 
-Or add it in one command with the Claude Code CLI (`-s user` makes it available in
-every project; drop it to add only to the current one):
+Copy `.env.example` and configure:
 
-```bash
-claude mcp add saleor -s user \
-  -e SALEOR_MCP_TRANSPORT=stdio \
-  -e SALEOR_API_URL=https://example.saleor.cloud/graphql/ \
-  -e SALEOR_AUTH_TOKEN=<your token> \
-  -e SALEOR_MCP_MODE=read_write \
-  -- uvx --from git+https://github.com/saleor/saleor-mcp saleor-mcp
-```
+| Variable                 | Purpose                                                                        |
+| ------------------------ | ------------------------------------------------------------------------------ |
+| `APL_PROVIDER`           | `file` for local development or `dynamodb` for the Saleor SDK adapter.         |
+| `APL_DYNAMODB_TABLE`     | DynamoDB table used when `APL_PROVIDER=dynamodb`.                              |
+| `AWS_REGION`             | Region for the DynamoDB client. Standard AWS credential discovery is used.     |
+| `MCP_CREDENTIAL_SECRET`  | At least 32 random characters used to sign MCP installation credentials.       |
+| `APP_IFRAME_BASE_URL`    | Optional public iframe URL override for local tunnels.                         |
+| `APP_API_BASE_URL`       | Optional public API URL override for local tunnels.                            |
+| `ALLOWED_DOMAIN_PATTERN` | Optional full-match regex limiting Saleor API URLs allowed to install the app. |
 
-Pin to a specific release by appending a tag, e.g.
-`git+https://github.com/saleor/saleor-mcp@0.2.0`. The same config works in Cursor and
-VS Code / Copilot under their respective `mcpServers` / `servers` keys. When run from a
-checkout instead, the command is `uv run saleor-mcp` with the same `env`.
+The Saleor SDK DynamoDB APL expects a table with string partition key `PK` and string
+sort key `SK`. The app needs `GetItem`, `PutItem`, `DeleteItem`, and `Scan` access to
+that table. APL selection is isolated behind `src/lib/apl`, so another persistent
+implementation can replace it without changing registration or MCP code.
 
-For a full local walkthrough (running against a local Saleor and wiring it into Claude
-Code), see [docs/testing-with-claude-code.md](docs/testing-with-claude-code.md).
-
-### Hosted (Streamable HTTP) — quick read-only trial
-
-Connect to a deployed instance and pass the connection via headers. Example VS Code /
-Copilot `mcp.json`:
-
-```json
-{
-  "servers": {
-    "saleor-mcp": {
-      "type": "http",
-      "url": "https://mcp.saleor.app/mcp",
-      "headers": {
-        "X-Saleor-API-URL": "https://example.saleor.cloud/graphql/",
-        "X-Saleor-Auth-Token": "<your token>"
-      }
-    }
-  }
-}
-```
-
-> The hosted endpoint runs `read_only`, and your token transits the shared server. For
-> write or admin workloads with a powerful token, use the local install above.
+`FileAPL` is blocked in production because Vercel's filesystem is not persistent.
+Vercel needs no custom Next.js build setup; configure the environment variables and
+deploy the repository normally.
 
 ## Safety policy
 
-Mutations are gated by `SALEOR_MCP_MODE` (default `read_only`):
+`SALEOR_MCP_MODE` keeps the `v2` deployment-wide behavior:
 
-| Mode | Behaviour |
-| --- | --- |
-| `read_only` | Only `run_query` works. Mutations are disabled. **Default.** |
-| `read_write` | Mutations allowed, except a built-in denylist of high-risk operations. |
-| `unrestricted` | Any mutation the token permits can run. No denylist. |
+| Mode           | Behavior                                                          |
+| -------------- | ----------------------------------------------------------------- |
+| `read_only`    | Queries only. This is the default.                                |
+| `read_write`   | Mutations are allowed except for the high-risk built-in denylist. |
+| `unrestricted` | Any mutation allowed by the installed app's permissions can run.  |
 
-In `read_write` mode the default denylist blocks operations that touch identity,
-access control, app installation, authentication and instance-wide settings (e.g.
-`staffDelete`, `permissionGroupUpdate`, `appInstall`, `tokenCreate`,
-`shopSettingsUpdate`). Adjust it with:
-
-- `SALEOR_MCP_ALLOWED_MUTATIONS` — comma-separated names to remove from the denylist.
-- `SALEOR_MCP_BLOCKED_MUTATIONS` — comma-separated names to add to the denylist.
-
-The token's permissions are always the final authority; the policy is defence in depth
-to prevent accidental, hard-to-reverse changes.
-
-### `ALLOWED_DOMAIN_PATTERN`
-
-A regex restricting which API URLs the server may connect to. The resolved API URL
-must be a well-formed `http(s)` URL, and when this is set the **full URL** must fully
-match the pattern (it is anchored at both ends). Special characters must be escaped.
-
-Example: `^https://([A-Za-z0-9._-]+)\.saleor\.cloud/graphql/$` allows any `saleor.cloud`
-subdomain on the `/graphql/` path.
-
-> **Use a restrictive character class for the host — never `.*`.** Because `.*` also
-> matches `/`, a pattern like `^https://.*\.saleor\.cloud/` is spoofable by an
-> attacker-controlled path such as `https://evil.example/.saleor.cloud/`, turning the
-> server into an SSRF relay. The `[A-Za-z0-9._-]+` class above cannot cross the
-> host/path boundary, so path-, userinfo- (`@`) and suffix-based spoofs are all
-> rejected.
-
-> **Production requirement:** on a hosted/public endpoint the API URL is supplied by
-> the client, so leaving this unset turns the server into an SSRF relay (it will
-> connect to any host, including internal addresses). Always set it in production. It
-> may be left unset only for local stdio use, where the URL is operator-controlled; the
-> server logs a warning when it is unset.
-
-## Installation (from source)
-
-### Prerequisites
-
-- Python 3.12 or higher
-- [uv](https://docs.astral.sh/uv/) package manager
-
-### Setup
-
-```bash
-git clone git@github.com:saleor/saleor-mcp.git
-cd saleor-mcp
-uv sync
-```
-
-Run over HTTP (default):
-
-```bash
-uv run saleor-mcp        # serves on http://localhost:6000 (override with HOST/PORT)
-```
-
-Run over stdio:
-
-```bash
-SALEOR_MCP_TRANSPORT=stdio \
-SALEOR_API_URL=https://example.saleor.cloud/graphql/ \
-SALEOR_AUTH_TOKEN=... \
-uv run saleor-mcp
-```
+Use comma-separated `SALEOR_MCP_ALLOWED_MUTATIONS` to remove names from the default
+denylist and `SALEOR_MCP_BLOCKED_MUTATIONS` to add names. The installed app's Saleor
+permissions are always the final ceiling.
 
 ## Development
 
-Run tests and lint:
+Requirements: Node.js 22 or newer and Corepack.
 
 ```bash
-uv run pytest
-uv run ruff check src
+corepack enable
+pnpm install
+cp .env.example .env.local
+pnpm dev
 ```
 
-Schema discovery uses **live introspection** of the connected instance, falling back to
-the bundled `schema.graphql` when introspection is unavailable. To refresh the bundled
-schema, replace `schema.graphql` with the SDL from your target Saleor version (or set
-`SALEOR_SCHEMA_PATH` to point at a different file).
+Useful endpoints:
+
+- public landing page: `http://localhost:3000/`
+- embedded app page: `http://localhost:3000/dashboard`
+- manifest: `http://localhost:3000/api/manifest`
+- MCP: `http://localhost:3000/mcp`
+- health: `http://localhost:3000/health`
+
+Run the full verification suite with:
+
+```bash
+pnpm check
+```
+
+Run tests with an HTML and terminal coverage report using:
+
+```bash
+pnpm test:coverage
+```
+
+Schema discovery first tries live introspection for the installed Saleor instance and
+falls back to the bundled `schema.graphql` from `v2`. Set `SALEOR_SCHEMA_PATH` only when
+testing a different fallback SDL.

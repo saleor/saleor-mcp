@@ -1,0 +1,55 @@
+{
+  "name": "saleor-mcp",
+  "version": "0.2.0",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest",
+    "check-types": "tsc --noEmit",
+    "check": "pnpm lint && pnpm check-types && pnpm test && pnpm build"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "packageManager": "pnpm@10.28.1",
+  "pnpm": {
+    "peerDependencyRules": {
+      "allowedVersions": {
+        "@saleor/app-sdk>dynamodb-toolbox": "2"
+      }
+    }
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "3.1120.0",
+    "@aws-sdk/lib-dynamodb": "3.1120.0",
+    "@aws-sdk/util-dynamodb": "3.996.9",
+    "@modelcontextprotocol/sdk": "1.30.0",
+    "@saleor/app-sdk": "1.15.0",
+    "dynamodb-toolbox": "2.10.6",
+    "graphql": "17.0.2",
+    "jose": "6.2.10",
+    "next": "16.3.3",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "26.4.0",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.5",
+    "@vitest/coverage-v8": "4.1.11",
+    "eslint": "9.39.5",
+    "eslint-config-next": "16.3.3",
+    "eslint-config-prettier": "10.1.8",
+    "prettier": "3.9.6",
+    "typescript": "5.9.3",
+    "vitest": "4.1.11"
+  }
+}
