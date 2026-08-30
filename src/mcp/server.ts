@@ -5,6 +5,14 @@ import { z } from "zod";
 
 import packageJson from "../../package.json";
 
+import {
+  authorizeMcpCapability,
+  authorizeRootFields,
+  McpScopeAuthorizationError,
+  mcpScopeErrorResult,
+  prepareMcpAuthorization,
+  type McpAuthorization,
+} from "./authorize";
 import { getPolicyConfig } from "./config";
 import { executeGraphql, SaleorGraphQLError } from "./graphql-client";
 import {
@@ -15,6 +23,7 @@ import {
   searchSchema,
 } from "./introspection";
 import { assertMutationAllowed, assertQueryAllowed } from "./policy";
+import { MCP_SCOPE_CATALOG } from "./scopes";
 
 const CONNECTION_QUERY = `
 query SaleorMcpConnectionInfo {
@@ -30,15 +39,20 @@ function result(value: Record<string, unknown>) {
   };
 }
 
-export function createMcpServer(authData: AuthData): McpServer {
+export function createMcpServer(
+  authData: AuthData,
+  authorization: McpAuthorization = { scopes: [] },
+): McpServer {
   const server = new McpServer({ name: "Saleor MCP Server", version: packageJson.version });
+  const normalizedAuthorization = prepareMcpAuthorization(authorization);
+  const grantedScopes = normalizedAuthorization.scopes;
 
   server.registerTool(
     "run_query",
     {
       title: "Run GraphQL query",
       description:
-        "Execute a read-only GraphQL query against the connected Saleor instance. Returns the raw GraphQL response, preserving data and errors.",
+        "Execute a read-only GraphQL query against the connected Saleor instance. Every root field requires its domain read scope. Returns the raw GraphQL response, preserving data and errors.",
       inputSchema: {
         query: z.string().describe("A GraphQL query document. Must contain only query operations."),
         variables: z
@@ -55,8 +69,14 @@ export function createMcpServer(authData: AuthData): McpServer {
       annotations: { readOnlyHint: true, openWorldHint: true },
     },
     async ({ query, variables, operation_name }) => {
-      assertQueryAllowed(query);
-      return result(await executeGraphql(authData, query, variables, operation_name));
+      try {
+        const analysis = assertQueryAllowed(query, operation_name);
+        authorizeRootFields(analysis, grantedScopes);
+        return result(await executeGraphql(authData, query, variables, operation_name));
+      } catch (error) {
+        if (error instanceof McpScopeAuthorizationError) return mcpScopeErrorResult(error);
+        throw error;
+      }
     },
   );
 
@@ -65,7 +85,7 @@ export function createMcpServer(authData: AuthData): McpServer {
     {
       title: "Run GraphQL mutation",
       description:
-        "Execute a GraphQL mutation against the connected Saleor instance, subject to the server safety policy. Returns the raw GraphQL response, preserving data and errors.",
+        "Execute a GraphQL mutation against the connected Saleor instance, subject to user write scopes and the installation safety policy. Returns the raw GraphQL response, preserving data and errors.",
       inputSchema: {
         query: z
           .string()
@@ -84,8 +104,14 @@ export function createMcpServer(authData: AuthData): McpServer {
       annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
     async ({ query, variables, operation_name }) => {
-      assertMutationAllowed(query, getPolicyConfig());
-      return result(await executeGraphql(authData, query, variables, operation_name));
+      try {
+        const analysis = assertMutationAllowed(query, getPolicyConfig(), operation_name);
+        authorizeRootFields(analysis, grantedScopes);
+        return result(await executeGraphql(authData, query, variables, operation_name));
+      } catch (error) {
+        if (error instanceof McpScopeAuthorizationError) return mcpScopeErrorResult(error);
+        throw error;
+      }
     },
   );
 
@@ -104,6 +130,12 @@ export function createMcpServer(authData: AuthData): McpServer {
       annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: true },
     },
     async ({ action, name, kind, search }) => {
+      try {
+        authorizeMcpCapability("introspect_schema", ["saleor:schema:read"], grantedScopes);
+      } catch (error) {
+        if (error instanceof McpScopeAuthorizationError) return mcpScopeErrorResult(error);
+        throw error;
+      }
       const schema = await getSchema(authData);
       if (action === "search") {
         return result(
@@ -142,11 +174,19 @@ export function createMcpServer(authData: AuthData): McpServer {
     {
       title: "Connection info",
       description:
-        "Report the connected instance, the app token permissions, and the active server-wide safety policy. Call this first.",
+        "Report the connected instance, app-token permissions, granted MCP user scopes, and active installation safety policy. Requires saleor:connection:read. Call this first.",
       annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: true },
     },
     async () => {
+      try {
+        authorizeMcpCapability("connection_info", ["saleor:connection:read"], grantedScopes);
+      } catch (error) {
+        if (error instanceof McpScopeAuthorizationError) return mcpScopeErrorResult(error);
+        throw error;
+      }
       const policy = getPolicyConfig();
+      const grantedScopeDefinitions = MCP_SCOPE_CATALOG.filter(({ id }) => grantedScopes.has(id));
+      const hasWriteScope = grantedScopeDefinitions.some(({ access }) => access === "write");
       const identity: Record<string, unknown> = {};
       try {
         const response = await executeGraphql(authData, CONNECTION_QUERY);
@@ -178,9 +218,15 @@ export function createMcpServer(authData: AuthData): McpServer {
         apiUrl: authData.saleorApiUrl,
         mode: policy.mode,
         writesEnabled:
-          policy.mode === "unrestricted" ||
-          (policy.mode === "read_write" && policy.allowedMutations.size > 0),
+          hasWriteScope &&
+          (policy.mode === "unrestricted" ||
+            (policy.mode === "read_write" && policy.allowedMutations.size > 0)),
         allowedMutations: policy.mode === "read_write" ? [...policy.allowedMutations].sort() : [],
+        mcpAuthorization: {
+          grantedScopes: [...grantedScopes].sort(),
+          unknownScopes: normalizedAuthorization.unknownScopes,
+          capabilities: grantedScopeDefinitions,
+        },
         ...identity,
       });
     },
@@ -193,15 +239,18 @@ export function createMcpServer(authData: AuthData): McpServer {
       mimeType: "text/plain",
       description: "The connected Saleor instance's GraphQL schema as SDL.",
     },
-    async () => ({
-      contents: [
-        {
-          uri: "saleor://schema/graphql",
-          mimeType: "text/plain",
-          text: printSchema(await getSchema(authData)),
-        },
-      ],
-    }),
+    async () => {
+      authorizeMcpCapability("saleor://schema/graphql", ["saleor:schema:read"], grantedScopes);
+      return {
+        contents: [
+          {
+            uri: "saleor://schema/graphql",
+            mimeType: "text/plain",
+            text: printSchema(await getSchema(authData)),
+          },
+        ],
+      };
+    },
   );
 
   server.registerPrompt(
@@ -213,7 +262,7 @@ export function createMcpServer(authData: AuthData): McpServer {
           role: "user",
           content: {
             type: "text",
-            text: "You are connected to a Saleor Commerce instance through a generic GraphQL gateway. Work in this loop:\n1. Call 'connection_info' to see the instance, the token's permissions and whether writes are enabled.\n2. Use 'introspect_schema' to discover what's available: 'search' by keyword, 'list_operations' for queries/mutations, then 'describe_operation' and 'describe_type' to learn exact arguments and fields.\n3. Run reads with 'run_query' and writes with 'run_mutation'. Always request only the fields you need.\nRemember: you can only do what the token's permissions allow, and mutations are additionally subject to the server's safety policy (read_only by default). Read GraphQL 'errors' in responses to self-correct.",
+            text: "You are connected to a Saleor Commerce instance through a generic GraphQL gateway. Work in this loop:\n1. Call 'connection_info' to see the instance, the app-token ceiling, your granted MCP scopes, and whether writes are enabled.\n2. Use 'introspect_schema' to discover what's available: 'search' by keyword, 'list_operations' for queries/mutations, then 'describe_operation' and 'describe_type' to learn exact arguments and fields.\n3. Run reads with 'run_query' and writes with 'run_mutation'. Always request only the fields you need.\nRemember: every selected GraphQL root field requires its domain-specific MCP scope, the Dashboard user's permissions limit which scopes may be granted, the installed app's Saleor permissions remain the upstream ceiling, and mutations are additionally subject to the installation safety policy. Read structured authorization and GraphQL errors to self-correct.",
           },
         },
       ],

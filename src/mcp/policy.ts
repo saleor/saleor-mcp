@@ -14,6 +14,8 @@ export type DocumentAnalysis = {
   mutationFields: string[];
   queryFields: string[];
   operationCount: number;
+  operationName?: string;
+  selectedOperationType?: OperationTypeNode;
 };
 
 function rootFieldNames(
@@ -39,7 +41,7 @@ function rootFieldNames(
   return names;
 }
 
-export function analyzeDocument(query: string): DocumentAnalysis {
+function parseDocument(query: string) {
   let document;
   try {
     document = parse(query);
@@ -48,6 +50,12 @@ export function analyzeDocument(query: string): DocumentAnalysis {
       `Invalid GraphQL syntax: ${error instanceof Error ? error.message : String(error)}`,
     );
   }
+
+  return document;
+}
+
+export function analyzeDocument(query: string): DocumentAnalysis {
+  const document = parseDocument(query);
 
   const fragments = new Map(
     document.definitions
@@ -82,32 +90,76 @@ export function analyzeDocument(query: string): DocumentAnalysis {
   return analysis;
 }
 
-export function assertQueryAllowed(query: string): DocumentAnalysis {
-  const analysis = analyzeDocument(query);
-  if (analysis.operationTypes.has(OperationTypeNode.SUBSCRIPTION)) {
+export function analyzeSelectedOperation(
+  query: string,
+  operationName?: string | null,
+): DocumentAnalysis {
+  const document = parseDocument(query);
+  const operations = document.definitions.filter(
+    (definition): definition is OperationDefinitionNode =>
+      definition.kind === Kind.OPERATION_DEFINITION,
+  );
+  if (operations.length === 0) {
+    throw new Error(
+      "The document contains no executable operation. Provide a query or mutation operation.",
+    );
+  }
+  if (!operationName && operations.length > 1) {
+    throw new Error(
+      "The document defines multiple operations. Provide 'operation_name' to select exactly one.",
+    );
+  }
+
+  const operation = operationName
+    ? operations.find((candidate) => candidate.name?.value === operationName)
+    : operations[0];
+  if (!operation)
+    throw new Error(`The operation '${operationName}' does not exist in the document.`);
+
+  const fragments = new Map(
+    document.definitions
+      .filter(
+        (definition): definition is FragmentDefinitionNode =>
+          definition.kind === Kind.FRAGMENT_DEFINITION,
+      )
+      .map((fragment) => [fragment.name.value, fragment]),
+  );
+  const fields = rootFieldNames(operation, fragments);
+  return {
+    operationTypes: new Set([operation.operation]),
+    mutationFields: operation.operation === OperationTypeNode.MUTATION ? fields : [],
+    queryFields: operation.operation === OperationTypeNode.QUERY ? fields : [],
+    operationCount: operations.length,
+    operationName: operation.name?.value,
+    selectedOperationType: operation.operation,
+  };
+}
+
+export function assertQueryAllowed(query: string, operationName?: string | null): DocumentAnalysis {
+  const analysis = analyzeSelectedOperation(query, operationName);
+  if (analysis.selectedOperationType === OperationTypeNode.SUBSCRIPTION) {
     throw new Error("Subscriptions are not supported by this server.");
   }
-  if (analysis.operationTypes.has(OperationTypeNode.MUTATION)) {
+  if (analysis.selectedOperationType === OperationTypeNode.MUTATION) {
     throw new Error(
-      "This document contains a mutation. Use the 'run_mutation' tool for operations that modify data.",
+      "The selected operation is a mutation. Use the 'run_mutation' tool for operations that modify data.",
     );
   }
   return analysis;
 }
 
-export function assertMutationAllowed(query: string, policy: PolicyConfig): DocumentAnalysis {
-  const analysis = analyzeDocument(query);
-  if (analysis.operationTypes.has(OperationTypeNode.SUBSCRIPTION)) {
+export function assertMutationAllowed(
+  query: string,
+  policy: PolicyConfig,
+  operationName?: string | null,
+): DocumentAnalysis {
+  const analysis = analyzeSelectedOperation(query, operationName);
+  if (analysis.selectedOperationType === OperationTypeNode.SUBSCRIPTION) {
     throw new Error("Subscriptions are not supported by this server.");
   }
-  if (!analysis.operationTypes.has(OperationTypeNode.MUTATION)) {
+  if (analysis.selectedOperationType !== OperationTypeNode.MUTATION) {
     throw new Error(
-      "This document contains no mutation. Use the 'run_query' tool for read-only operations.",
-    );
-  }
-  if (analysis.operationTypes.has(OperationTypeNode.QUERY)) {
-    throw new Error(
-      "Mixing query and mutation operations in one document is not allowed. Submit the mutation on its own.",
+      "The selected operation is not a mutation. Use the 'run_query' tool for read-only operations.",
     );
   }
   if (policy.mode === "read_only") {
