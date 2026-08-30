@@ -1,4 +1,4 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { McpServer } from "@modelcontextprotocol/server";
 import type { AuthData } from "@saleor/app-sdk/APL";
 import { printSchema } from "graphql";
 import { z } from "zod";
@@ -39,7 +39,7 @@ export function createMcpServer(authData: AuthData): McpServer {
       title: "Run GraphQL query",
       description:
         "Execute a read-only GraphQL query against the connected Saleor instance. Returns the raw GraphQL response, preserving data and errors.",
-      inputSchema: {
+      inputSchema: z.object({
         query: z.string().describe("A GraphQL query document. Must contain only query operations."),
         variables: z
           .record(z.string(), z.unknown())
@@ -51,7 +51,7 @@ export function createMcpServer(authData: AuthData): McpServer {
           .nullable()
           .optional()
           .describe("Operation name to run when the document defines several."),
-      },
+      }),
       annotations: { readOnlyHint: true, openWorldHint: true },
     },
     async ({ query, variables, operation_name }) => {
@@ -66,7 +66,7 @@ export function createMcpServer(authData: AuthData): McpServer {
       title: "Run GraphQL mutation",
       description:
         "Execute a GraphQL mutation against the connected Saleor instance, subject to the server safety policy. Returns the raw GraphQL response, preserving data and errors.",
-      inputSchema: {
+      inputSchema: z.object({
         query: z
           .string()
           .describe("A GraphQL mutation document. Must contain only mutation operations."),
@@ -80,7 +80,7 @@ export function createMcpServer(authData: AuthData): McpServer {
           .nullable()
           .optional()
           .describe("Operation name to run when the document defines several."),
-      },
+      }),
       annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
     async ({ query, variables, operation_name }) => {
@@ -95,12 +95,12 @@ export function createMcpServer(authData: AuthData): McpServer {
       title: "Introspect schema",
       description:
         "Explore the Saleor GraphQL schema in small slices using search, describe_type, list_operations, or describe_operation.",
-      inputSchema: {
+      inputSchema: z.object({
         action: z.enum(["search", "describe_type", "list_operations", "describe_operation"]),
         name: z.string().nullable().optional(),
         kind: z.enum(["query", "mutation"]).nullable().optional(),
         search: z.string().nullable().optional(),
-      },
+      }),
       annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: true },
     },
     async ({ action, name, kind, search }) => {

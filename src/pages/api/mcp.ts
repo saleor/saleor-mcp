@@ -1,4 +1,4 @@
-import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import { NodeStreamableHTTPServerTransport } from "@modelcontextprotocol/node";
 import type { NextApiRequest, NextApiResponse } from "next";
 
 import { authenticateMcpRequest, McpAuthenticationError } from "@/mcp/authenticate";
@@ -31,7 +31,7 @@ export default async function handler(request: NextApiRequest, response: NextApi
   }
 
   const server = createMcpServer(authData);
-  const transport = new StreamableHTTPServerTransport({
+  const transport = new NodeStreamableHTTPServerTransport({
     sessionIdGenerator: undefined,
     enableJsonResponse: true,
   });
