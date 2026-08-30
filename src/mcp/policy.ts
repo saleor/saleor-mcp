@@ -164,7 +164,7 @@ export function assertMutationAllowed(
   }
   if (policy.mode === "read_only") {
     throw new Error(
-      "The server is running in read_only mode, so mutations are disabled. Set SALEOR_MCP_MODE=read_write (or unrestricted) to enable writes.",
+      "This Saleor MCP installation is in read-only mode, so mutations are disabled. An administrator can enable reviewed writes in the app's permission settings.",
     );
   }
 
@@ -173,7 +173,7 @@ export function assertMutationAllowed(
   ].sort();
   if (policy.mode === "read_write" && notAllowed.length > 0) {
     throw new Error(
-      `The following mutation(s) are not in the deployment allowlist: ${notAllowed.join(", ")}. Add them to SALEOR_MCP_ALLOWED_MUTATIONS after reviewing their effects, or explicitly set SALEOR_MCP_MODE=unrestricted.`,
+      `The following mutation(s) are not in this installation's allowlist: ${notAllowed.join(", ")}. An administrator can review and add them in the Saleor MCP app settings.`,
     );
   }
 

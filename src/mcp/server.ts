@@ -13,7 +13,8 @@ import {
   prepareMcpAuthorization,
   type McpAuthorization,
 } from "./authorize";
-import { getPolicyConfig } from "./config";
+import { loadPolicyConfig } from "./config-repository";
+import type { PolicyConfig } from "./config";
 import { executeGraphql, SaleorGraphQLError } from "./graphql-client";
 import {
   describeOperation,
@@ -39,13 +40,19 @@ function result(value: Record<string, unknown>) {
   };
 }
 
+export type McpServerOptions = {
+  policyLoader?: (authData: AuthData) => Promise<PolicyConfig>;
+};
+
 export function createMcpServer(
   authData: AuthData,
   authorization: McpAuthorization = { scopes: [] },
+  options: McpServerOptions = {},
 ): McpServer {
   const server = new McpServer({ name: "Saleor MCP Server", version: packageJson.version });
   const normalizedAuthorization = prepareMcpAuthorization(authorization);
   const grantedScopes = normalizedAuthorization.scopes;
+  const policyLoader = options.policyLoader ?? loadPolicyConfig;
 
   server.registerTool(
     "run_query",
@@ -105,7 +112,7 @@ export function createMcpServer(
     },
     async ({ query, variables, operation_name }) => {
       try {
-        const analysis = assertMutationAllowed(query, getPolicyConfig(), operation_name);
+        const analysis = assertMutationAllowed(query, await policyLoader(authData), operation_name);
         authorizeRootFields(analysis, grantedScopes);
         return result(await executeGraphql(authData, query, variables, operation_name));
       } catch (error) {
@@ -184,7 +191,7 @@ export function createMcpServer(
         if (error instanceof McpScopeAuthorizationError) return mcpScopeErrorResult(error);
         throw error;
       }
-      const policy = getPolicyConfig();
+      const policy = await policyLoader(authData);
       const grantedScopeDefinitions = MCP_SCOPE_CATALOG.filter(({ id }) => grantedScopes.has(id));
       const hasWriteScope = grantedScopeDefinitions.some(({ access }) => access === "write");
       const identity: Record<string, unknown> = {};

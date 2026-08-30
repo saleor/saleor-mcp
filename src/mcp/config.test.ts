@@ -1,38 +1,108 @@
 import { describe, expect, it } from "vitest";
 
-import { getPolicyConfig } from "./config";
+import {
+  defaultPolicyConfig,
+  parsePolicyConfigInput,
+  parsePolicyMetadata,
+  PolicyConfigValidationError,
+  serializePolicyConfig,
+  stringifyPolicyMetadata,
+} from "./config";
+import { DEFAULT_MCP_SCOPES } from "./scopes";
 
-describe("getPolicyConfig", () => {
-  it("defaults to read_only", () => {
-    const policy = getPolicyConfig({});
-    expect(policy.mode).toBe("read_only");
-    expect(policy.allowedMutations.size).toBe(0);
-  });
+const scopeFields = {
+  enabledScopes: ["saleor:schema:read", "saleor:catalog:write"] as const,
+  defaultScopes: ["saleor:schema:read"] as const,
+};
 
-  it("fails closed with an empty allowlist in read_write", () => {
-    const policy = getPolicyConfig({ SALEOR_MCP_MODE: "read_write" });
-    expect(policy.mode).toBe("read_write");
-    expect(policy.allowedMutations.size).toBe(0);
-  });
-
-  it("parses the explicit mutation allowlist", () => {
-    const policy = getPolicyConfig({
-      SALEOR_MCP_MODE: "read_write",
-      SALEOR_MCP_ALLOWED_MUTATIONS: "productCreate, productUpdate, productCreate",
+describe("installation policy configuration", () => {
+  it("defaults to a fail-closed read-only policy", () => {
+    expect(defaultPolicyConfig()).toEqual({
+      enabledScopes: new Set(DEFAULT_MCP_SCOPES),
+      defaultScopes: new Set(DEFAULT_MCP_SCOPES),
+      mode: "read_only",
+      allowedMutations: new Set(),
     });
-    expect([...policy.allowedMutations]).toEqual(["productCreate", "productUpdate"]);
   });
 
-  it("keeps the allowlist visible in unrestricted mode", () => {
-    expect(
-      getPolicyConfig({
-        SALEOR_MCP_MODE: "unrestricted",
-        SALEOR_MCP_ALLOWED_MUTATIONS: "productCreate",
-      }).allowedMutations,
-    ).toEqual(new Set(["productCreate"]));
+  it("normalizes duplicate mutation names and serializes them deterministically", () => {
+    const policy = parsePolicyConfigInput({
+      ...scopeFields,
+      mode: "read_write",
+      allowedMutations: ["productUpdate", "productCreate", "productCreate"],
+    });
+
+    expect(serializePolicyConfig(policy)).toEqual({
+      version: 1,
+      enabledScopes: [...scopeFields.enabledScopes],
+      defaultScopes: [...scopeFields.defaultScopes],
+      mode: "read_write",
+      allowedMutations: ["productCreate", "productUpdate"],
+    });
   });
 
-  it("rejects an invalid mode", () => {
-    expect(() => getPolicyConfig({ SALEOR_MCP_MODE: "bogus" })).toThrow("Invalid SALEOR_MCP_MODE");
+  it("round-trips the versioned private metadata payload", () => {
+    const policy = {
+      enabledScopes: new Set(scopeFields.enabledScopes),
+      defaultScopes: new Set(scopeFields.defaultScopes),
+      mode: "unrestricted" as const,
+      allowedMutations: new Set(["productUpdate"]),
+    };
+
+    expect(parsePolicyMetadata(stringifyPolicyMetadata(policy))).toEqual(policy);
+  });
+
+  it("rejects invalid modes, unknown fields, and invalid GraphQL names", () => {
+    expect(() =>
+      parsePolicyConfigInput({ ...scopeFields, mode: "bogus", allowedMutations: [] }),
+    ).toThrow(PolicyConfigValidationError);
+    expect(() =>
+      parsePolicyConfigInput({
+        ...scopeFields,
+        mode: "read_only",
+        allowedMutations: [],
+        extra: true,
+      }),
+    ).toThrow(PolicyConfigValidationError);
+    expect(() =>
+      parsePolicyConfigInput({
+        ...scopeFields,
+        mode: "read_write",
+        allowedMutations: ["product-create"],
+      }),
+    ).toThrow("valid GraphQL field names");
+  });
+
+  it("rejects unknown scopes and defaults outside the installation ceiling", () => {
+    expect(() =>
+      parsePolicyConfigInput({
+        enabledScopes: [],
+        defaultScopes: ["saleor:unknown:read"],
+        mode: "read_only",
+        allowedMutations: [],
+      }),
+    ).toThrow(PolicyConfigValidationError);
+    expect(() =>
+      parsePolicyConfigInput({
+        enabledScopes: ["saleor:schema:read"],
+        defaultScopes: ["saleor:catalog:read"],
+        mode: "read_only",
+        allowedMutations: [],
+      }),
+    ).toThrow("must also be enabled");
+  });
+
+  it("rejects malformed or unsupported metadata", () => {
+    expect(() => parsePolicyMetadata("not-json")).toThrow("not valid JSON");
+    expect(() =>
+      parsePolicyMetadata(
+        JSON.stringify({
+          ...scopeFields,
+          version: 2,
+          mode: "read_only",
+          allowedMutations: [],
+        }),
+      ),
+    ).toThrow(PolicyConfigValidationError);
   });
 });

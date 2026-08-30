@@ -11,6 +11,8 @@ const dangerous = 'mutation { staffDelete(id: "1") { errors { field } } }';
 
 function policy(mode: PolicyConfig["mode"], allowed: string[] = []): PolicyConfig {
   return {
+    enabledScopes: new Set(),
+    defaultScopes: new Set(),
     mode,
     allowedMutations: new Set(allowed),
   };
@@ -52,9 +54,9 @@ describe("GraphQL policy", () => {
   });
 
   it("enforces read_only and a fail-closed read_write allowlist", () => {
-    expect(() => assertMutationAllowed(mutation, policy("read_only"))).toThrow("read_only mode");
+    expect(() => assertMutationAllowed(mutation, policy("read_only"))).toThrow("read-only mode");
     expect(() => assertMutationAllowed(mutation, policy("read_write"))).toThrow(
-      "not in the deployment allowlist",
+      "not in this installation's allowlist",
     );
     expect(
       assertMutationAllowed(mutation, policy("read_write", ["productCreate"])).mutationFields,

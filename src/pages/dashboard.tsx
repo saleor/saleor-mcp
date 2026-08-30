@@ -4,8 +4,8 @@ import Head from "next/head";
 const DashboardPanel = dynamic(() => import("@/ui/dashboard-panel"), {
   ssr: false,
   loading: () => (
-    <main className="dashboard-shell">
-      <section className="dashboard-card">Connecting to Saleor Dashboard…</section>
+    <main className="configuration-shell">
+      <section className="configuration-loading">Connecting to Saleor Dashboard…</section>
     </main>
   ),
 });
@@ -14,7 +14,7 @@ export default function DashboardPage() {
   return (
     <>
       <Head>
-        <title>Connect Saleor MCP</title>
+        <title>Configure Saleor MCP</title>
       </Head>
       <DashboardPanel />
     </>

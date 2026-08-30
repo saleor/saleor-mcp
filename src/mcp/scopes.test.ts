@@ -22,7 +22,12 @@ import {
   type McpScope,
 } from "./scopes";
 
-const unrestricted = { mode: "unrestricted" as const, allowedMutations: new Set<string>() };
+const unrestricted = {
+  enabledScopes: new Set<McpScope>(),
+  defaultScopes: new Set<McpScope>(),
+  mode: "unrestricted" as const,
+  allowedMutations: new Set<string>(),
+};
 
 function granted(...scopes: McpScope[]) {
   return new Set(scopes);

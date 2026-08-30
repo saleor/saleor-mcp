@@ -2,6 +2,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import type { PolicyConfig } from "./config";
 import { createMcpServer } from "./server";
 import type { McpScope } from "./scopes";
 
@@ -11,8 +12,29 @@ const authData = {
   token: "app-token",
 };
 
-async function connectedClient(scopes: readonly McpScope[] = []) {
-  const server = createMcpServer(authData, { scopes });
+function policy(
+  mode: PolicyConfig["mode"] = "read_only",
+  allowedMutations: string[] = [],
+): PolicyConfig {
+  return {
+    enabledScopes: new Set(),
+    defaultScopes: new Set(),
+    mode,
+    allowedMutations: new Set(allowedMutations),
+  };
+}
+
+async function connectedClient(
+  scopes: readonly McpScope[] = [],
+  installationPolicy: PolicyConfig = policy(),
+) {
+  const server = createMcpServer(
+    authData,
+    { scopes },
+    {
+      policyLoader: async () => installationPolicy,
+    },
+  );
   const client = new Client({ name: "test-client", version: "1.0.0" });
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
   await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
@@ -62,7 +84,6 @@ describe("Saleor MCP contract", () => {
   });
 
   it("keeps mutations read-only by default", async () => {
-    vi.stubEnv("SALEOR_MCP_MODE", "read_only");
     const { client, server } = await connectedClient(["saleor:catalog:write"]);
     const response = await client.callTool({
       name: "run_mutation",
@@ -71,14 +92,16 @@ describe("Saleor MCP contract", () => {
       },
     });
     expect(response.isError).toBe(true);
-    expect(JSON.stringify(response.content)).toContain("read_only mode");
+    expect(JSON.stringify(response.content)).toContain("read-only mode");
     await client.close();
     await server.close();
   });
 
   it("fails closed in read_write until a mutation is explicitly allowlisted", async () => {
-    vi.stubEnv("SALEOR_MCP_MODE", "read_write");
-    const { client, server } = await connectedClient(["saleor:connection:read"]);
+    const { client, server } = await connectedClient(
+      ["saleor:catalog:write"],
+      policy("read_write"),
+    );
     const response = await client.callTool({
       name: "run_mutation",
       arguments: {
@@ -86,13 +109,12 @@ describe("Saleor MCP contract", () => {
       },
     });
     expect(response.isError).toBe(true);
-    expect(JSON.stringify(response.content)).toContain("not in the deployment allowlist");
+    expect(JSON.stringify(response.content)).toContain("not in this installation's allowlist");
     await client.close();
     await server.close();
   });
 
   it("reports that writes are disabled when the read_write allowlist is empty", async () => {
-    vi.stubEnv("SALEOR_MCP_MODE", "read_write");
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue(
@@ -107,10 +129,10 @@ describe("Saleor MCP contract", () => {
         ),
       ),
     );
-    const { client, server } = await connectedClient([
-      "saleor:connection:read",
-      "saleor:catalog:write",
-    ]);
+    const { client, server } = await connectedClient(
+      ["saleor:connection:read", "saleor:catalog:write"],
+      policy("read_write"),
+    );
     const response = await client.callTool({ name: "connection_info" });
     expect(response.structuredContent).toMatchObject({
       mode: "read_write",
@@ -122,8 +144,6 @@ describe("Saleor MCP contract", () => {
   });
 
   it("runs an explicitly allowlisted mutation", async () => {
-    vi.stubEnv("SALEOR_MCP_MODE", "read_write");
-    vi.stubEnv("SALEOR_MCP_ALLOWED_MUTATIONS", "productCreate");
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue(
@@ -132,7 +152,10 @@ describe("Saleor MCP contract", () => {
         }),
       ),
     );
-    const { client, server } = await connectedClient(["saleor:catalog:write"]);
+    const { client, server } = await connectedClient(
+      ["saleor:catalog:write"],
+      policy("read_write", ["productCreate"]),
+    );
     const response = await client.callTool({
       name: "run_mutation",
       arguments: {

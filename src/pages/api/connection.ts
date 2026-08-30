@@ -2,17 +2,19 @@ import { createProtectedHandler } from "@saleor/app-sdk/handlers/next";
 import type { AuthData } from "@saleor/app-sdk/APL";
 
 import { issueInstallationCredential } from "@/lib/installation-credential";
-import { getPolicyConfig } from "@/mcp/config";
+import { loadPolicyConfig } from "@/mcp/config-repository";
+import type { PolicyConfig } from "@/mcp/config";
 import { saleorApp } from "@/saleor-app";
 
 export async function buildConnectionDetails(
   authData: AuthData,
   baseUrl: string,
   env: Record<string, string | undefined> = process.env,
+  policyLoader: (authData: AuthData) => Promise<PolicyConfig> = loadPolicyConfig,
 ) {
   const credential = await issueInstallationCredential(authData);
   const mcpUrl = `${env.APP_API_BASE_URL || baseUrl}/mcp`;
-  const policy = getPolicyConfig(env);
+  const policy = await policyLoader(authData);
 
   return {
     saleorApiUrl: authData.saleorApiUrl,

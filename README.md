@@ -65,7 +65,8 @@ https://your-deployment.example/api/manifest
 ```
 
 After installation, open **Saleor MCP** from Apps. A user with `MANAGE_APPS` can copy
-the ready-to-use HTTP MCP configuration. The fixed manifest permission set covers
+the ready-to-use HTTP MCP configuration and manage the installation's permissions in
+the embedded configuration page. The fixed manifest permission set covers
 ordinary catalogue, checkout, order, discount, gift-card, content, shipping, tax,
 payment, and translation work. It deliberately excludes staff/customer identity,
 app management, plugins, channels, observability, and instance-wide settings.
@@ -93,21 +94,27 @@ implementation can replace it without changing registration or MCP code.
 Vercel needs no custom Next.js build setup; configure the environment variables and
 deploy the repository normally.
 
-## Safety policy
+## In-app permission policy
 
-The installation write policy is an additional ceiling over user scopes. Unlike the
-original `v2` denylist, `read_write` fails closed:
+The installation policy is managed from the app's **Configuration** page and is an
+additional ceiling over user scopes. Loading and saving it requires `MANAGE_APPS`.
+The server stores a versioned JSON document under the installed App's
+`saleor.mcp.installation-policy.v1` private metadata key, so settings never appear in
+public metadata or deployment configuration. In addition to choosing the MCP scopes
+clients may request and the defaults used when no scope is requested, administrators
+can set a fail-closed GraphQL write policy:
 
 | Mode           | Behavior                                                         |
 | -------------- | ---------------------------------------------------------------- |
-| `read_only`    | Queries only. This is the default.                               |
-| `read_write`   | Only mutations explicitly named in the deployment allowlist run. |
+| `read_only`    | Queries only. This is the safe default.                          |
+| `read_write`   | Only mutations explicitly named in the in-app allowlist can run. |
 | `unrestricted` | Any mutation allowed by the installed app's permissions can run. |
 
-Set comma-separated `SALEOR_MCP_ALLOWED_MUTATIONS` when using `read_write`. An empty
-allowlist permits no mutations, and new Saleor mutations stay disabled until they are
-explicitly reviewed and added. `unrestricted` is an explicit escape hatch for trusted
-deployments. The installed app's Saleor permissions are always the final ceiling.
+An empty `read_write` allowlist permits no mutations, and new Saleor mutations stay
+disabled until they are explicitly reviewed and added. `unrestricted` is an explicit
+escape hatch for trusted clients. The installed app's Saleor permissions are always
+the final ceiling. Missing settings default to `read_only`; malformed saved metadata
+also fails closed and is surfaced to administrators in the app UI.
 
 ## Development
 
