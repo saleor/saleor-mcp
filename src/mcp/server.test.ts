@@ -3,6 +3,7 @@ import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { createMcpServer } from "./server";
+import type { McpScope } from "./scopes";
 
 const authData = {
   appId: "app",
@@ -10,8 +11,8 @@ const authData = {
   token: "app-token",
 };
 
-async function connectedClient() {
-  const server = createMcpServer(authData);
+async function connectedClient(scopes: readonly McpScope[] = []) {
+  const server = createMcpServer(authData, { scopes });
   const client = new Client({ name: "test-client", version: "1.0.0" });
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
   await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
@@ -25,7 +26,7 @@ describe("Saleor MCP contract", () => {
   });
 
   it("exposes the four v2 tools, schema resource, and prompt", async () => {
-    const { client, server } = await connectedClient();
+    const { client, server } = await connectedClient(["saleor:catalog:read"]);
     await expect(client.listTools()).resolves.toMatchObject({
       tools: expect.arrayContaining([
         expect.objectContaining({ name: "connection_info" }),
@@ -50,7 +51,7 @@ describe("Saleor MCP contract", () => {
       "fetch",
       vi.fn().mockResolvedValue(new Response(JSON.stringify(body), { status: 200 })),
     );
-    const { client, server } = await connectedClient();
+    const { client, server } = await connectedClient(["saleor:catalog:read"]);
     const response = await client.callTool({
       name: "run_query",
       arguments: { query: "query { products(first: 1) { edges { node { id } } } }" },
@@ -62,7 +63,7 @@ describe("Saleor MCP contract", () => {
 
   it("keeps mutations read-only by default", async () => {
     vi.stubEnv("SALEOR_MCP_MODE", "read_only");
-    const { client, server } = await connectedClient();
+    const { client, server } = await connectedClient(["saleor:catalog:write"]);
     const response = await client.callTool({
       name: "run_mutation",
       arguments: {
@@ -77,7 +78,7 @@ describe("Saleor MCP contract", () => {
 
   it("fails closed in read_write until a mutation is explicitly allowlisted", async () => {
     vi.stubEnv("SALEOR_MCP_MODE", "read_write");
-    const { client, server } = await connectedClient();
+    const { client, server } = await connectedClient(["saleor:connection:read"]);
     const response = await client.callTool({
       name: "run_mutation",
       arguments: {
@@ -106,7 +107,10 @@ describe("Saleor MCP contract", () => {
         ),
       ),
     );
-    const { client, server } = await connectedClient();
+    const { client, server } = await connectedClient([
+      "saleor:connection:read",
+      "saleor:catalog:write",
+    ]);
     const response = await client.callTool({ name: "connection_info" });
     expect(response.structuredContent).toMatchObject({
       mode: "read_write",
@@ -128,7 +132,7 @@ describe("Saleor MCP contract", () => {
         }),
       ),
     );
-    const { client, server } = await connectedClient();
+    const { client, server } = await connectedClient(["saleor:catalog:write"]);
     const response = await client.callTool({
       name: "run_mutation",
       arguments: {
@@ -139,6 +143,29 @@ describe("Saleor MCP contract", () => {
     expect(response.structuredContent).toEqual({
       data: { productCreate: { product: { id: "1" } } },
     });
+    await client.close();
+    await server.close();
+  });
+
+  it("returns structured scope denial details before calling Saleor", async () => {
+    const fetch = vi.fn();
+    vi.stubGlobal("fetch", fetch);
+    const { client, server } = await connectedClient(["saleor:orders:read"]);
+    const response = await client.callTool({
+      name: "run_query",
+      arguments: { query: "query Catalog { aliased: products(first: 1) { totalCount } }" },
+    });
+    expect(response.isError).toBe(true);
+    expect(response.structuredContent).toMatchObject({
+      error: {
+        code: "MCP_SCOPE_DENIED",
+        operation: "query",
+        operationName: "Catalog",
+        missingScopes: ["saleor:catalog:read"],
+        wwwAuthenticate: 'Bearer error="insufficient_scope", scope="saleor:catalog:read"',
+      },
+    });
+    expect(fetch).not.toHaveBeenCalled();
     await client.close();
     await server.close();
   });
