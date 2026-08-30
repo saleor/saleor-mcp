@@ -3,8 +3,14 @@ import type { NextApiRequest, NextApiResponse } from "next";
 
 import { authenticateMcpRequest, McpAuthenticationError } from "@/mcp/authenticate";
 import { createMcpServer } from "@/mcp/server";
+import { getPublicBaseUrl, protectedResourceMetadataUrl } from "@/oauth/config";
+import { getDefaultOAuthScopes } from "@/oauth/scopes";
 
-export default async function handler(request: NextApiRequest, response: NextApiResponse) {
+export async function handleMcpRequest(
+  request: NextApiRequest,
+  response: NextApiResponse,
+  installationId: string,
+) {
   if (request.method !== "POST") {
     response.setHeader("Allow", "POST");
     return response.status(405).json({
@@ -16,10 +22,21 @@ export default async function handler(request: NextApiRequest, response: NextApi
 
   let authData;
   try {
-    authData = await authenticateMcpRequest(request.headers.authorization);
+    authData = await authenticateMcpRequest(request.headers.authorization, {
+      baseUrl: getPublicBaseUrl(request),
+      installationId,
+    });
   } catch (error) {
     const unauthorized = error instanceof McpAuthenticationError;
     if (!unauthorized) console.error("Failed to authenticate MCP request", error);
+    if (unauthorized) {
+      const metadata = protectedResourceMetadataUrl(getPublicBaseUrl(request), installationId);
+      const scopes = getDefaultOAuthScopes().join(" ");
+      response.setHeader(
+        "WWW-Authenticate",
+        `Bearer resource_metadata="${metadata}"${scopes ? `, scope="${scopes}"` : ""}`,
+      );
+    }
     return response.status(unauthorized ? 401 : 500).json({
       jsonrpc: "2.0",
       error: {
@@ -30,7 +47,7 @@ export default async function handler(request: NextApiRequest, response: NextApi
     });
   }
 
-  const server = createMcpServer(authData);
+  const server = createMcpServer(authData.authData, { scopes: authData.principal.scopes });
   const transport = new StreamableHTTPServerTransport({
     sessionIdGenerator: undefined,
     enableJsonResponse: true,
@@ -54,4 +71,10 @@ export default async function handler(request: NextApiRequest, response: NextApi
       });
     }
   }
+}
+
+export default async function handler(_request: NextApiRequest, response: NextApiResponse) {
+  return response.status(404).json({
+    error: "Use the per-installation MCP URL shown in the Saleor Dashboard app.",
+  });
 }

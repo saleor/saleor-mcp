@@ -1,12 +1,22 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { issueInstallationCredential } from "@/lib/installation-credential";
-import handler from "@/pages/api/mcp";
+import { mcpResource } from "@/oauth/config";
+import { registerInstallation } from "@/oauth/installations";
+import { MemoryOAuthStore, setOAuthStoreForTests } from "@/oauth/store";
+import { issueAccessToken } from "@/oauth/tokens";
+import { handleMcpRequest } from "@/pages/api/mcp";
 import { saleorApp } from "@/saleor-app";
 
 function request(method: string, authorization?: string): NextApiRequest {
-  return { method, headers: { authorization } } as NextApiRequest;
+  return {
+    method,
+    headers: {
+      authorization,
+      host: "mcp.example.com",
+      "x-forwarded-proto": "https",
+    },
+  } as unknown as NextApiRequest;
 }
 
 function response() {
@@ -22,38 +32,51 @@ function response() {
       body = value;
       return res;
     }),
+    on: vi.fn(),
   } as unknown as NextApiResponse;
   return { res, statusCode: () => statusCode, body: () => body };
 }
 
 describe("MCP HTTP route", () => {
-  beforeEach(() =>
-    vi.stubEnv("MCP_CREDENTIAL_SECRET", "a-secret-with-at-least-thirty-two-characters"),
-  );
+  let store: MemoryOAuthStore;
+
+  beforeEach(() => {
+    vi.stubEnv("MCP_OAUTH_SECRET", "a-secret-with-at-least-thirty-two-characters");
+    store = new MemoryOAuthStore();
+    setOAuthStoreForTests(store);
+  });
 
   afterEach(() => {
+    setOAuthStoreForTests(undefined);
     vi.restoreAllMocks();
     vi.unstubAllEnvs();
   });
 
   it("allows only POST requests", async () => {
     const target = response();
-    await handler(request("GET"), target.res);
+    await handleMcpRequest(request("GET"), target.res, "a".repeat(32));
     expect(target.statusCode()).toBe(405);
     expect(target.res.setHeader).toHaveBeenCalledWith("Allow", "POST");
   });
 
-  it("returns 401 for a missing or invalid installation credential", async () => {
+  it("returns an OAuth discovery challenge for a missing or invalid access token", async () => {
+    const installationId = "a".repeat(32);
     const missing = response();
-    await handler(request("POST"), missing.res);
+    await handleMcpRequest(request("POST"), missing.res, installationId);
     expect(missing.statusCode()).toBe(401);
     expect(missing.body()).toMatchObject({ error: { code: -32001 } });
+    expect(missing.res.setHeader).toHaveBeenCalledWith(
+      "WWW-Authenticate",
+      expect.stringContaining(
+        `Bearer resource_metadata="https://mcp.example.com/.well-known/oauth-protected-resource/mcp/${installationId}", scope="saleor:connection:read`,
+      ),
+    );
 
     const invalid = response();
-    await handler(request("POST", "Bearer not-a-jwt"), invalid.res);
+    await handleMcpRequest(request("POST", "Bearer not-a-jwt"), invalid.res, installationId);
     expect(invalid.statusCode()).toBe(401);
     expect(invalid.body()).toMatchObject({
-      error: { message: "Invalid MCP installation credential." },
+      error: { message: "Invalid or expired MCP access token." },
     });
   });
 
@@ -63,12 +86,28 @@ describe("MCP HTTP route", () => {
       saleorApiUrl: "https://shop.saleor.cloud/graphql/",
       token: "server-token",
     };
-    const credential = await issueInstallationCredential(authData);
     vi.spyOn(saleorApp.apl, "get").mockRejectedValue(new Error("DynamoDB unavailable"));
     vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const installationId = await registerInstallation(
+      authData,
+      "https://dashboard.saleor.cloud",
+      store,
+    );
+    const { accessToken } = await issueAccessToken({
+      baseUrl: "https://mcp.example.com",
+      installationId,
+      saleorApiUrl: authData.saleorApiUrl,
+      appId: authData.appId,
+      subject: "subject",
+      userEmail: "staff@example.com",
+      saleorPermissions: [],
+      scopes: [],
+      audience: mcpResource("https://mcp.example.com", installationId),
+      clientId: "client",
+    });
 
     const target = response();
-    await handler(request("POST", `Bearer ${credential}`), target.res);
+    await handleMcpRequest(request("POST", `Bearer ${accessToken}`), target.res, installationId);
 
     expect(target.statusCode()).toBe(500);
     expect(target.body()).toMatchObject({
@@ -76,12 +115,12 @@ describe("MCP HTTP route", () => {
     });
   });
 
-  it("returns 500 when the server credential secret is misconfigured", async () => {
-    vi.stubEnv("MCP_CREDENTIAL_SECRET", "short");
+  it("returns 500 when the OAuth signing secret is misconfigured", async () => {
+    vi.stubEnv("MCP_OAUTH_SECRET", "short");
     vi.spyOn(console, "error").mockImplementation(() => undefined);
 
     const target = response();
-    await handler(request("POST", "Bearer credential"), target.res);
+    await handleMcpRequest(request("POST", "Bearer credential"), target.res, "a".repeat(32));
 
     expect(target.statusCode()).toBe(500);
     expect(target.body()).toMatchObject({

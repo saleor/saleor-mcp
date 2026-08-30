@@ -1,8 +1,8 @@
 import { createProtectedHandler } from "@saleor/app-sdk/handlers/next";
 import type { AuthData } from "@saleor/app-sdk/APL";
 
-import { issueInstallationCredential } from "@/lib/installation-credential";
 import { getPolicyConfig } from "@/mcp/config";
+import { canonicalUrl, deriveInstallationId, mcpResource } from "@/oauth/config";
 import { saleorApp } from "@/saleor-app";
 
 export async function buildConnectionDetails(
@@ -10,21 +10,20 @@ export async function buildConnectionDetails(
   baseUrl: string,
   env: Record<string, string | undefined> = process.env,
 ) {
-  const credential = await issueInstallationCredential(authData);
-  const mcpUrl = `${env.APP_API_BASE_URL || baseUrl}/mcp`;
+  const installationId = deriveInstallationId(authData, { ...process.env, ...env });
+  const mcpUrl = mcpResource(canonicalUrl(env.APP_API_BASE_URL || baseUrl), installationId);
   const policy = getPolicyConfig(env);
 
   return {
     saleorApiUrl: authData.saleorApiUrl,
     mcpUrl,
     mode: policy.mode,
-    credential,
+    installationId,
     config: {
       mcpServers: {
         saleor: {
           type: "http",
           url: mcpUrl,
-          headers: { Authorization: `Bearer ${credential}` },
         },
       },
     },

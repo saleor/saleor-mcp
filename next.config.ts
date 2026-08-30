@@ -3,11 +3,23 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   outputFileTracingIncludes: {
-    "/api/mcp": ["./schema.graphql"],
+    "/api/mcp/[installationId]": ["./schema.graphql"],
   },
   async rewrites() {
     return [
-      { source: "/mcp", destination: "/api/mcp" },
+      { source: "/mcp/:installationId", destination: "/api/mcp/:installationId" },
+      {
+        source: "/.well-known/oauth-protected-resource/mcp/:installationId",
+        destination: "/api/oauth/:installationId/protected-resource",
+      },
+      {
+        source: "/.well-known/oauth-authorization-server/oauth/:installationId",
+        destination: "/api/oauth/:installationId/authorization-server",
+      },
+      {
+        source: "/oauth/:installationId/:endpoint(authorize|token|register|revoke)",
+        destination: "/api/oauth/:installationId/:endpoint",
+      },
       { source: "/health", destination: "/api/health" },
     ];
   },

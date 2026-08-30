@@ -134,8 +134,8 @@ export default function HomePage() {
               View the repository <span aria-hidden="true">↗</span>
             </a>
             <div className="note-box">
-              The Saleor app token is stored server-side. MCP clients receive a separate signed
-              installation credential and never see the app token.
+              The Saleor app token stays server-side. Users approve access in their Saleor
+              Dashboard, and MCP clients receive a separate short-lived OAuth token.
             </div>
           </div>
         </section>

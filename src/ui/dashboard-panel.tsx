@@ -4,8 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 type Connection = {
   saleorApiUrl: string;
   mcpUrl: string;
+  installationId: string;
   mode: string;
-  credential: string;
   config: Record<string, unknown>;
 };
 
@@ -20,7 +20,21 @@ export default function DashboardPanel() {
   useEffect(() => {
     if (!appBridgeState?.ready || !canManageApps) return;
     const controller = new AbortController();
-    authenticatedFetch("/api/connection", { signal: controller.signal })
+    const ancestorOrigin = window.location.ancestorOrigins?.[0];
+    const referrerOrigin = document.referrer ? new URL(document.referrer).origin : undefined;
+    authenticatedFetch("/api/oauth/installations", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ dashboardOrigin: ancestorOrigin ?? referrerOrigin }),
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        if (!response.ok)
+          throw new Error(
+            (await response.json()).error ?? "Could not register this Dashboard instance.",
+          );
+        return authenticatedFetch("/api/connection", { signal: controller.signal });
+      })
       .then(async (response) => {
         if (!response.ok)
           throw new Error((await response.json()).error ?? "Could not create connection details.");
@@ -86,7 +100,7 @@ export default function DashboardPanel() {
 
         {error ? <div className="inline-error">{error}</div> : null}
         {!connection && !error ? (
-          <div className="config-loading">Preparing the installation credential…</div>
+          <div className="config-loading">Preparing the per-instance OAuth connection…</div>
         ) : null}
         {connection ? (
           <>
@@ -112,8 +126,8 @@ export default function DashboardPanel() {
               </pre>
             </div>
             <p className="credential-note">
-              Treat this configuration like a password. It identifies this app installation and
-              stops working after the app is uninstalled or reinstalled.
+              Adding this URL starts a secure sign-in in this Saleor Dashboard. The MCP client
+              receives a separate short-lived token only after you approve access.
             </p>
           </>
         ) : null}

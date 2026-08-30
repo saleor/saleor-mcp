@@ -1,15 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { verifyInstallationCredential } from "@/lib/installation-credential";
 import { buildConnectionDetails } from "@/pages/api/connection";
 
 describe("connection details", () => {
-  beforeEach(() =>
-    vi.stubEnv("MCP_CREDENTIAL_SECRET", "a-secret-with-at-least-thirty-two-characters"),
-  );
+  beforeEach(() => vi.stubEnv("MCP_OAUTH_SECRET", "a-secret-with-at-least-thirty-two-characters"));
   afterEach(() => vi.unstubAllEnvs());
 
-  it("builds an HTTP MCP config without exposing the Saleor app token", async () => {
+  it("builds a per-installation OAuth MCP config without any bearer token", async () => {
     const authData = {
       appId: "app-1",
       saleorApiUrl: "https://shop.saleor.cloud/graphql/",
@@ -20,19 +17,16 @@ describe("connection details", () => {
     });
 
     expect(details).toMatchObject({
-      mcpUrl: "https://app.example.com/mcp",
       mode: "read_write",
       config: {
         mcpServers: {
-          saleor: { type: "http", url: "https://app.example.com/mcp" },
+          saleor: { type: "http" },
         },
       },
     });
+    expect(details.mcpUrl).toBe(`https://app.example.com/mcp/${details.installationId}`);
     expect(JSON.stringify(details)).not.toContain(authData.token);
-    await expect(verifyInstallationCredential(details.credential)).resolves.toEqual({
-      appId: authData.appId,
-      saleorApiUrl: authData.saleorApiUrl,
-    });
+    expect(JSON.stringify(details)).not.toContain("Authorization");
   });
 
   it("uses the explicit API base URL when one is configured", async () => {
@@ -41,6 +35,6 @@ describe("connection details", () => {
       "https://iframe.example",
       { APP_API_BASE_URL: "https://api.example" },
     );
-    expect(details.mcpUrl).toBe("https://api.example/mcp");
+    expect(details.mcpUrl).toBe(`https://api.example/mcp/${details.installationId}`);
   });
 });
