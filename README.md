@@ -14,15 +14,31 @@ changes are:
 
 ## MCP contract
 
-| Tool                | Purpose                                                             |
-| ------------------- | ------------------------------------------------------------------- |
-| `connection_info`   | Report the installation, app permissions, and active safety policy. |
-| `introspect_schema` | Search and describe schema types, queries, and mutations.           |
-| `run_query`         | Run read-only GraphQL. Mutation documents are rejected.             |
-| `run_mutation`      | Run GraphQL mutations subject to the safety policy.                 |
+| Tool                | Purpose                                                               |
+| ------------------- | --------------------------------------------------------------------- |
+| `connection_info`   | Report installation, app permissions, user scopes, and safety policy. |
+| `introspect_schema` | Search and describe schema types, queries, and mutations.             |
+| `run_query`         | Run GraphQL queries allowed by the user's domain read scopes.         |
+| `run_mutation`      | Run mutations allowed by user scopes and installation policy.         |
 
 The server also exposes the `saleor://schema/graphql` resource and the
 `explore_saleor` prompt. GraphQL tool results preserve Saleor's raw `data` and `errors`.
+
+## MCP user authorization scopes
+
+MCP access is split into domain-specific read and write scopes. Catalog, inventory,
+orders, checkouts, payments, customers, staff, apps, settings, and the other commerce
+domains can be granted independently. High-risk payment, identity, staff, app,
+settings, and cross-domain operations are isolated from ordinary reads.
+
+Every GraphQL root field is mapped exactly from the bundled Saleor schema. Unknown
+or newly added roots fail closed until reviewed, and every field in a multi-field
+operation must be authorized before Saleor is called. The consenting Dashboard
+user's Saleor permissions limit which MCP scopes can be granted; the installed app
+token's permissions remain the final upstream ceiling.
+
+See [MCP user scopes](docs/mcp-scopes.md) for the scope catalog interface, consent
+intersection helper, defaults, GraphQL mapping rules, and structured denial format.
 
 ## How authentication works
 
@@ -79,8 +95,8 @@ deploy the repository normally.
 
 ## Safety policy
 
-`SALEOR_MCP_MODE` controls the deployment-wide write policy. Unlike the original `v2`
-denylist, `read_write` now fails closed:
+The installation write policy is an additional ceiling over user scopes. Unlike the
+original `v2` denylist, `read_write` fails closed:
 
 | Mode           | Behavior                                                         |
 | -------------- | ---------------------------------------------------------------- |

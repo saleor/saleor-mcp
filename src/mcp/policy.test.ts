@@ -45,7 +45,7 @@ describe("GraphQL policy", () => {
 
   it("keeps reads and writes separate", () => {
     expect(() => assertQueryAllowed(mutation)).toThrow("run_mutation");
-    expect(() => assertMutationAllowed(query, policy("read_write"))).toThrow("no mutation");
+    expect(() => assertMutationAllowed(query, policy("read_write"))).toThrow("not a mutation");
     expect(() => assertQueryAllowed("subscription { event { issuedAt } }")).toThrow(
       "Subscriptions",
     );
