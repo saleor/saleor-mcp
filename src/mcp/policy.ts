@@ -9,6 +9,11 @@ import {
 
 import type { PolicyConfig } from "./config";
 
+const MAX_DOCUMENT_CHARACTERS = 100_000;
+const MAX_DOCUMENT_TOKENS = 10_000;
+const MAX_ROOT_FIELDS_PER_OPERATION = 500;
+const MAX_ROOT_SELECTION_DEPTH = 64;
+
 export type DocumentAnalysis = {
   operationTypes: Set<OperationTypeNode>;
   mutationFields: string[];
@@ -20,43 +25,69 @@ function rootFieldNames(
   operation: OperationDefinitionNode,
   fragments: Map<string, FragmentDefinitionNode>,
 ): string[] {
-  const names: string[] = [];
+  const names = new Set<string>();
+  const visitedFragments = new Set<string>();
+  let rootFieldCount = 0;
 
-  const walk = (selectionSet: SelectionSetNode, seen: ReadonlySet<string>) => {
+  const walk = (selectionSet: SelectionSetNode, depth: number) => {
+    if (depth > MAX_ROOT_SELECTION_DEPTH) {
+      throw new Error(
+        `GraphQL operation exceeds the maximum root selection depth of ${MAX_ROOT_SELECTION_DEPTH}.`,
+      );
+    }
+
     for (const selection of selectionSet.selections) {
       if (selection.kind === Kind.FIELD) {
-        names.push(selection.name.value);
+        rootFieldCount += 1;
+        if (rootFieldCount > MAX_ROOT_FIELDS_PER_OPERATION) {
+          throw new Error(
+            `GraphQL operation contains more than ${MAX_ROOT_FIELDS_PER_OPERATION} root fields.`,
+          );
+        }
+        names.add(selection.name.value);
       } else if (selection.kind === Kind.INLINE_FRAGMENT) {
-        walk(selection.selectionSet, seen);
-      } else if (selection.kind === Kind.FRAGMENT_SPREAD && !seen.has(selection.name.value)) {
-        const fragment = fragments.get(selection.name.value);
-        if (fragment) walk(fragment.selectionSet, new Set([...seen, selection.name.value]));
+        walk(selection.selectionSet, depth + 1);
+      } else if (selection.kind === Kind.FRAGMENT_SPREAD) {
+        const fragmentName = selection.name.value;
+        if (visitedFragments.has(fragmentName)) continue;
+        visitedFragments.add(fragmentName);
+
+        const fragment = fragments.get(fragmentName);
+        if (!fragment) throw new Error(`Unknown GraphQL fragment '${fragmentName}'.`);
+        walk(fragment.selectionSet, depth + 1);
       }
     }
   };
 
-  walk(operation.selectionSet, new Set());
-  return names;
+  walk(operation.selectionSet, 0);
+  return [...names];
 }
 
 export function analyzeDocument(query: string): DocumentAnalysis {
+  if (query.length > MAX_DOCUMENT_CHARACTERS) {
+    throw new Error(
+      `GraphQL document exceeds the maximum size of ${MAX_DOCUMENT_CHARACTERS} characters.`,
+    );
+  }
+
   let document;
   try {
-    document = parse(query);
+    document = parse(query, { maxTokens: MAX_DOCUMENT_TOKENS });
   } catch (error) {
     throw new Error(
       `Invalid GraphQL syntax: ${error instanceof Error ? error.message : String(error)}`,
     );
   }
 
-  const fragments = new Map(
-    document.definitions
-      .filter(
-        (definition): definition is FragmentDefinitionNode =>
-          definition.kind === Kind.FRAGMENT_DEFINITION,
-      )
-      .map((fragment) => [fragment.name.value, fragment]),
-  );
+  const fragments = new Map<string, FragmentDefinitionNode>();
+  for (const definition of document.definitions) {
+    if (definition.kind !== Kind.FRAGMENT_DEFINITION) continue;
+    const fragmentName = definition.name.value;
+    if (fragments.has(fragmentName)) {
+      throw new Error(`Duplicate GraphQL fragment '${fragmentName}'.`);
+    }
+    fragments.set(fragmentName, definition);
+  }
   const analysis: DocumentAnalysis = {
     operationTypes: new Set(),
     mutationFields: [],
