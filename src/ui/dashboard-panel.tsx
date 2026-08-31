@@ -9,6 +9,24 @@ type Connection = {
   config: Record<string, unknown>;
 };
 
+async function copyText(text: string) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return;
+  } catch {
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.readOnly = true;
+    textarea.style.position = "fixed";
+    textarea.style.left = "-9999px";
+    document.body.appendChild(textarea);
+    textarea.select();
+    const copied = document.execCommand("copy");
+    textarea.remove();
+    if (!copied) throw new Error("Copy command was rejected.");
+  }
+}
+
 export default function DashboardPanel() {
   const { appBridgeState } = useAppBridge();
   const authenticatedFetch = useAuthenticatedFetch();
@@ -44,9 +62,14 @@ export default function DashboardPanel() {
   );
 
   const copyConfig = async () => {
-    await navigator.clipboard.writeText(configText);
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 1800);
+    try {
+      await copyText(configText);
+      setError(undefined);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1800);
+    } catch {
+      setError("Could not copy the configuration. Select the text and copy it manually.");
+    }
   };
 
   if (!appBridgeState?.ready) {
