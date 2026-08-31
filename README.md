@@ -41,11 +41,10 @@ Deploy the app, then use this URL in **Dashboard → Apps → Install external a
 https://your-deployment.example/api/manifest
 ```
 
-After installation, open **Saleor MCP** from Apps. A user with `MANAGE_APPS` can copy
-the ready-to-use HTTP MCP configuration. The fixed manifest permission set covers
-ordinary catalogue, checkout, order, discount, gift-card, content, shipping, tax,
-payment, and translation work. It deliberately excludes staff/customer identity,
-app management, plugins, channels, observability, and instance-wide settings.
+The app installs without Saleor permissions. After installation, open **Saleor MCP** from
+Apps. A user with `MANAGE_APPS` chooses which parts of Saleor the MCP may access, reviews
+the exact permission request in Dashboard, and then copies the ready-to-use HTTP MCP
+configuration. The approved Saleor permissions are the app token's access ceiling.
 
 ## Deployment configuration
 

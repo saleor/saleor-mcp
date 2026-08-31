@@ -14,7 +14,7 @@ export default function DashboardPage() {
   return (
     <>
       <Head>
-        <title>Connect Saleor MCP</title>
+        <title>Set up Saleor MCP</title>
       </Head>
       <DashboardPanel />
     </>

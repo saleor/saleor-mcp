@@ -91,8 +91,8 @@ export default function HomePage() {
               </ul>
             </div>
             <p>
-              What it can do is bounded by the permissions granted during app installation and by
-              the server&apos;s safety policy.
+              What it can do is bounded by the Saleor permissions you approve during onboarding and
+              by the server&apos;s safety policy.
             </p>
           </div>
         </section>
@@ -122,6 +122,10 @@ export default function HomePage() {
               </li>
               <li>
                 <span>3</span>
+                <p>Choose which parts of Saleor the MCP may access and approve the request.</p>
+              </li>
+              <li>
+                <span>4</span>
                 <p>
                   Copy the generated MCP configuration into Claude Code, Cursor, VS Code, or another
                   HTTP MCP client.
