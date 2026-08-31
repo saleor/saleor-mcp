@@ -12,7 +12,7 @@ changes are:
 - The MCP transport is hosted Streamable HTTP at `/mcp`. Local stdio is not included.
 - The runtime and app boilerplate come from the cleaned Saleor app template on Next.js.
 
-## MCP contract
+## MCP tools
 
 | Tool                | Purpose                                                             |
 | ------------------- | ------------------------------------------------------------------- |
