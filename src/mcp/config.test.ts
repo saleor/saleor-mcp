@@ -23,16 +23,13 @@ describe("getPolicyConfig", () => {
     expect([...policy.allowedMutations]).toEqual(["productCreate", "productUpdate"]);
   });
 
-  it("keeps the allowlist visible in unrestricted mode", () => {
-    expect(
-      getPolicyConfig({
-        SALEOR_MCP_MODE: "unrestricted",
-        SALEOR_MCP_ALLOWED_MUTATIONS: "productCreate",
-      }).allowedMutations,
-    ).toEqual(new Set(["productCreate"]));
-  });
-
   it("rejects an invalid mode", () => {
     expect(() => getPolicyConfig({ SALEOR_MCP_MODE: "bogus" })).toThrow("Invalid SALEOR_MCP_MODE");
+  });
+
+  it("rejects the removed unrestricted mode", () => {
+    expect(() => getPolicyConfig({ SALEOR_MCP_MODE: "unrestricted" })).toThrow(
+      "Invalid SALEOR_MCP_MODE",
+    );
   });
 });

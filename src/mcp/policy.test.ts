@@ -59,9 +59,7 @@ describe("GraphQL policy", () => {
     expect(
       assertMutationAllowed(mutation, policy("read_write", ["productCreate"])).mutationFields,
     ).toEqual(["productCreate"]);
-    expect(assertMutationAllowed(dangerous, policy("unrestricted")).mutationFields).toEqual([
-      "staffDelete",
-    ]);
+    expect(() => assertMutationAllowed(dangerous, policy("read_write"))).toThrow("staffDelete");
   });
 
   it("rejects every root mutation unless all are allowlisted", () => {

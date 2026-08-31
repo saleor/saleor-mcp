@@ -1,4 +1,5 @@
 import Head from "next/head";
+import type { GetServerSideProps } from "next";
 
 import packageJson from "../../package.json";
 
@@ -32,6 +33,8 @@ const tools = [
     arguments: ["query (required)", "variables", "operation_name"],
   },
 ];
+
+export const getServerSideProps: GetServerSideProps = async () => ({ props: {} });
 
 function Logo() {
   return (

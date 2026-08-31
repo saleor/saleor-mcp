@@ -1,12 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { stubCredentialKeys } from "@/tests/credential-keys";
+
 import { buildConnectionDetails } from "./connection";
 import { verifyInstallationCredential } from "./installation-credential";
 
 describe("connection details", () => {
-  beforeEach(() =>
-    vi.stubEnv("MCP_CREDENTIAL_SECRET", "a-secret-with-at-least-thirty-two-characters"),
-  );
+  beforeEach(stubCredentialKeys);
   afterEach(() => vi.unstubAllEnvs());
 
   it("builds an HTTP MCP config without exposing the Saleor app token", async () => {

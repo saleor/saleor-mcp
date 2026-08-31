@@ -2,13 +2,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { issueInstallationCredential } from "@/mcp/installation-credential";
 import { saleorApp } from "@/saleor-app";
+import { stubCredentialKeys } from "@/tests/credential-keys";
 
 import { authenticateMcpRequest } from "./authenticate";
 
 describe("MCP request authentication", () => {
-  beforeEach(() =>
-    vi.stubEnv("MCP_CREDENTIAL_SECRET", "a-secret-with-at-least-thirty-two-characters"),
-  );
+  beforeEach(stubCredentialKeys);
   afterEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllEnvs();

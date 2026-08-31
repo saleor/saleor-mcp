@@ -29,8 +29,8 @@ The server also exposes the `saleor://schema/graphql` resource and the
    checks that its app ID still matches, and uses the server-side app token for Saleor.
 
 Uninstalling or reinstalling the app invalidates the old connection because the stored
-installation or app ID changes. Rotating `MCP_CREDENTIAL_SECRET` invalidates every
-issued MCP connection for that deployment.
+installation or app ID changes. Rotating the RSA key pair invalidates every issued MCP
+connection for that deployment.
 
 ## Install in Saleor
 
@@ -50,15 +50,27 @@ app management, plugins, channels, observability, and instance-wide settings.
 
 Copy `.env.example` and configure:
 
-| Variable                 | Purpose                                                                        |
-| ------------------------ | ------------------------------------------------------------------------------ |
-| `APL_PROVIDER`           | `file` for local development or `dynamodb` for the Saleor SDK adapter.         |
-| `APL_DYNAMODB_TABLE`     | DynamoDB table used when `APL_PROVIDER=dynamodb`.                              |
-| `AWS_REGION`             | Region for the DynamoDB client. Standard AWS credential discovery is used.     |
-| `MCP_CREDENTIAL_SECRET`  | At least 32 random characters used to sign MCP installation credentials.       |
-| `APP_IFRAME_BASE_URL`    | Optional public iframe URL override for local tunnels.                         |
-| `APP_API_BASE_URL`       | Optional public API URL override for local tunnels.                            |
-| `ALLOWED_DOMAIN_PATTERN` | Optional full-match regex limiting Saleor API URLs allowed to install the app. |
+| Variable                     | Purpose                                                                     |
+| ---------------------------- | --------------------------------------------------------------------------- |
+| `APL_PROVIDER`               | `file` for local development or `dynamodb` for the Saleor SDK adapter.      |
+| `APL_DYNAMODB_TABLE`         | DynamoDB table used when `APL_PROVIDER=dynamodb`.                           |
+| `AWS_REGION`                 | Region for the DynamoDB client. Standard AWS credential discovery is used.  |
+| `MCP_CREDENTIAL_PRIVATE_KEY` | PKCS8 RSA private key used to sign MCP installation credentials with RS512. |
+| `MCP_CREDENTIAL_PUBLIC_KEY`  | SPKI RSA public key used to verify MCP installation credentials.            |
+| `APP_IFRAME_BASE_URL`        | Optional public iframe URL override for local tunnels.                      |
+| `APP_API_BASE_URL`           | Optional public API URL override for local tunnels.                         |
+| `ALLOWED_DOMAIN_PATTERN`     | Required full-match regex for Saleor API URLs allowed to install the app.   |
+
+Generate the credential key pair once for each deployment:
+
+```bash
+openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:3072 -out mcp-private.pem
+openssl pkey -in mcp-private.pem -pubout -out mcp-public.pem
+```
+
+Store the full PEM values in the matching environment variables and do not commit the
+private key. Escaped `\n` line breaks are accepted when the deployment platform cannot
+store multiline values.
 
 The Saleor SDK DynamoDB APL expects a table with string partition key `PK` and string
 sort key `SK`. The app needs `GetItem`, `PutItem`, `DeleteItem`, and `Scan` access to
@@ -71,19 +83,20 @@ deploy the repository normally.
 
 ## Safety policy
 
-`SALEOR_MCP_MODE` controls the deployment-wide write policy. The `read_write` mode
-fails closed:
+`ALLOWED_DOMAIN_PATTERN` fails closed: when it is missing or empty, every installation
+is rejected before the app contacts the supplied URL.
 
-| Mode           | Behavior                                                         |
-| -------------- | ---------------------------------------------------------------- |
-| `read_only`    | Queries only. This is the default.                               |
-| `read_write`   | Only mutations explicitly named in the deployment allowlist run. |
-| `unrestricted` | Any mutation allowed by the installed app's permissions can run. |
+`SALEOR_MCP_MODE` controls the deployment-wide write policy. Both modes fail closed:
+
+| Mode         | Behavior                                                         |
+| ------------ | ---------------------------------------------------------------- |
+| `read_only`  | Queries only. This is the default.                               |
+| `read_write` | Only mutations explicitly named in the deployment allowlist run. |
 
 Set comma-separated `SALEOR_MCP_ALLOWED_MUTATIONS` when using `read_write`. An empty
 allowlist permits no mutations, and new Saleor mutations stay disabled until they are
-explicitly reviewed and added. `unrestricted` is an explicit escape hatch for trusted
-deployments. The installed app's Saleor permissions are always the final ceiling.
+explicitly reviewed and added. The installed app's Saleor permissions are always the
+final ceiling.
 
 ## Development
 

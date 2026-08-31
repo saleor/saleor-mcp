@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { saleorApp } from "@/saleor-app";
+import { stubCredentialKeys } from "@/tests/credential-keys";
 
 import handler from "./http-handler";
 import { issueInstallationCredential } from "./installation-credential";
@@ -28,9 +29,7 @@ function response() {
 }
 
 describe("MCP HTTP route", () => {
-  beforeEach(() =>
-    vi.stubEnv("MCP_CREDENTIAL_SECRET", "a-secret-with-at-least-thirty-two-characters"),
-  );
+  beforeEach(stubCredentialKeys);
 
   afterEach(() => {
     vi.restoreAllMocks();
@@ -77,8 +76,8 @@ describe("MCP HTTP route", () => {
     });
   });
 
-  it("returns 500 when the server credential secret is misconfigured", async () => {
-    vi.stubEnv("MCP_CREDENTIAL_SECRET", "short");
+  it("returns 500 when the server credential public key is misconfigured", async () => {
+    vi.stubEnv("MCP_CREDENTIAL_PUBLIC_KEY", "not-a-public-key");
     vi.spyOn(console, "error").mockImplementation(() => undefined);
 
     const target = response();

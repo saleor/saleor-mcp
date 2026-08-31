@@ -1,4 +1,7 @@
+import { decodeProtectedHeader } from "jose";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import { otherCredentialPublicKey, stubCredentialKeys } from "@/tests/credential-keys";
 
 import {
   issueInstallationCredential,
@@ -6,9 +9,7 @@ import {
 } from "./installation-credential";
 
 describe("installation credentials", () => {
-  beforeEach(() =>
-    vi.stubEnv("MCP_CREDENTIAL_SECRET", "a-secret-with-at-least-thirty-two-characters"),
-  );
+  beforeEach(stubCredentialKeys);
   afterEach(() => vi.unstubAllEnvs());
 
   it("round-trips only the installation identity", async () => {
@@ -22,6 +23,7 @@ describe("installation credentials", () => {
       saleorApiUrl: "https://shop.saleor.cloud/graphql/",
     });
     expect(credential).not.toContain("server-only-app-token");
+    expect(decodeProtectedHeader(credential).alg).toBe("RS512");
   });
 
   it("rejects credentials signed by another deployment", async () => {
@@ -30,18 +32,18 @@ describe("installation credentials", () => {
       saleorApiUrl: "https://shop.saleor.cloud/graphql/",
       token: "token",
     });
-    vi.stubEnv("MCP_CREDENTIAL_SECRET", "a-different-secret-with-thirty-two-characters");
+    vi.stubEnv("MCP_CREDENTIAL_PUBLIC_KEY", otherCredentialPublicKey);
     await expect(verifyInstallationCredential(credential)).rejects.toThrow();
   });
 
-  it("requires a strong deployment secret", async () => {
-    vi.stubEnv("MCP_CREDENTIAL_SECRET", "short");
+  it("requires a valid RSA private key", async () => {
+    vi.stubEnv("MCP_CREDENTIAL_PRIVATE_KEY", "not-a-private-key");
     await expect(
       issueInstallationCredential({
         appId: "app",
         saleorApiUrl: "https://example.com/graphql/",
         token: "x",
       }),
-    ).rejects.toThrow("at least 32");
+    ).rejects.toThrow("valid PKCS8 RSA private key");
   });
 });

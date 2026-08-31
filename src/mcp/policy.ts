@@ -112,16 +112,16 @@ export function assertMutationAllowed(query: string, policy: PolicyConfig): Docu
   }
   if (policy.mode === "read_only") {
     throw new Error(
-      "The server is running in read_only mode, so mutations are disabled. Set SALEOR_MCP_MODE=read_write (or unrestricted) to enable writes.",
+      "The server is running in read_only mode, so mutations are disabled. Set SALEOR_MCP_MODE=read_write and allowlist specific mutations to enable writes.",
     );
   }
 
   const notAllowed = [
     ...new Set(analysis.mutationFields.filter((name) => !policy.allowedMutations.has(name))),
   ].sort();
-  if (policy.mode === "read_write" && notAllowed.length > 0) {
+  if (notAllowed.length > 0) {
     throw new Error(
-      `The following mutation(s) are not in the deployment allowlist: ${notAllowed.join(", ")}. Add them to SALEOR_MCP_ALLOWED_MUTATIONS after reviewing their effects, or explicitly set SALEOR_MCP_MODE=unrestricted.`,
+      `The following mutation(s) are not in the deployment allowlist: ${notAllowed.join(", ")}. Add them to SALEOR_MCP_ALLOWED_MUTATIONS after reviewing their effects.`,
     );
   }
 
