@@ -3,7 +3,7 @@ import type { AuthData } from "@saleor/app-sdk/APL";
 import {
   InstallationCredentialConfigurationError,
   verifyInstallationCredential,
-} from "@/lib/installation-credential";
+} from "@/mcp/installation-credential";
 import { saleorApp } from "@/saleor-app";
 
 export class McpAuthenticationError extends Error {}

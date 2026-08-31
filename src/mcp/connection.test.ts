@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { verifyInstallationCredential } from "@/lib/installation-credential";
-import { buildConnectionDetails } from "@/pages/api/connection";
+import { buildConnectionDetails } from "./connection";
+import { verifyInstallationCredential } from "./installation-credential";
 
 describe("connection details", () => {
   beforeEach(() =>

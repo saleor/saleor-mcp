@@ -2,7 +2,7 @@ import { DynamoAPL } from "@saleor/app-sdk/APL/dynamodb";
 import { FileAPL } from "@saleor/app-sdk/APL/file";
 import { describe, expect, it } from "vitest";
 
-import { createApl } from "./index";
+import { createApl } from "./apl";
 
 describe("APL selection", () => {
   it("uses FileAPL only outside production", () => {

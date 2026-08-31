@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { issueInstallationCredential } from "@/lib/installation-credential";
+import { issueInstallationCredential } from "@/mcp/installation-credential";
 import { saleorApp } from "@/saleor-app";
 
 import { authenticateMcpRequest } from "./authenticate";

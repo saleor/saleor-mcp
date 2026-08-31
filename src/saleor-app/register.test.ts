@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { createAllowedSaleorUrls } from "@/pages/api/register";
+import { createAllowedSaleorUrls } from "./register";
 
 describe("registration domain filter", () => {
   it("allows every installation when no pattern is configured", () => {

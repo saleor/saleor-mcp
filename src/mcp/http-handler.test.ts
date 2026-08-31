@@ -1,9 +1,10 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { issueInstallationCredential } from "@/lib/installation-credential";
-import handler from "@/pages/api/mcp";
 import { saleorApp } from "@/saleor-app";
+
+import handler from "./http-handler";
+import { issueInstallationCredential } from "./installation-credential";
 
 function request(method: string, authorization?: string): NextApiRequest {
   return { method, headers: { authorization } } as NextApiRequest;
