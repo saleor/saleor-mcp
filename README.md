@@ -4,14 +4,6 @@ A hosted Model Context Protocol (MCP) server for Saleor Commerce, packaged as a
 multi-tenant Saleor App. It gives AI assistants four generic tools for discovering and
 using a Saleor GraphQL API instead of maintaining a fixed catalogue of actions.
 
-This TypeScript app is a feature-parity migration of the `v2` MCP. The intentional
-changes are:
-
-- Saleor installs the app and gives its token directly to the server. Users no longer
-  paste Saleor URLs or tokens into an MCP client.
-- The MCP transport is hosted Streamable HTTP at `/mcp`. Local stdio is not included.
-- The runtime and app boilerplate come from the cleaned Saleor app template on Next.js.
-
 ## MCP tools
 
 | Tool                | Purpose                                                             |
@@ -79,8 +71,8 @@ deploy the repository normally.
 
 ## Safety policy
 
-`SALEOR_MCP_MODE` controls the deployment-wide write policy. Unlike the original `v2`
-denylist, `read_write` now fails closed:
+`SALEOR_MCP_MODE` controls the deployment-wide write policy. The `read_write` mode
+fails closed:
 
 | Mode           | Behavior                                                         |
 | -------------- | ---------------------------------------------------------------- |
@@ -95,7 +87,7 @@ deployments. The installed app's Saleor permissions are always the final ceiling
 
 ## Development
 
-Requirements: Node.js 22 or newer and Corepack.
+Requirements: Node.js 24 or newer and Corepack.
 
 ```bash
 corepack enable
@@ -125,5 +117,5 @@ pnpm test:coverage
 ```
 
 Schema discovery first tries live introspection for the installed Saleor instance and
-falls back to the bundled `schema.graphql` from `v2`. Set `SALEOR_SCHEMA_PATH` only when
-testing a different fallback SDL.
+falls back to the bundled `schema.graphql`. Set `SALEOR_SCHEMA_PATH` only when testing a
+different fallback SDL.
