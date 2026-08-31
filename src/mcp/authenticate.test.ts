@@ -42,4 +42,13 @@ describe("MCP request authentication", () => {
       "no longer active",
     );
   });
+
+  it("rejects malformed bearer headers without regular-expression backtracking", async () => {
+    await expect(authenticateMcpRequest("Basic credential")).rejects.toThrow(
+      "Missing MCP installation credential",
+    );
+    await expect(authenticateMcpRequest(`Bearer ${" ".repeat(100_000)}credential`)).rejects.toThrow(
+      "Missing MCP installation credential",
+    );
+  });
 });
