@@ -1,0 +1,4 @@
+interface:
+  display_name: "Test Saleor MCP"
+  short_description: "Run end-to-end Saleor MCP product checks"
+  default_prompt: "Use $test-saleor-mcp to test this Saleor MCP from startup through a detached coding-agent task."
