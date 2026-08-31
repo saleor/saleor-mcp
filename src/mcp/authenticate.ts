@@ -2,6 +2,7 @@ import type { AuthData } from "@saleor/app-sdk/APL";
 
 import {
   InstallationCredentialConfigurationError,
+  matchesInstallationFingerprint,
   verifyInstallationCredential,
 } from "@/mcp/installation-credential";
 import { saleorApp } from "@/saleor-app";
@@ -37,7 +38,11 @@ export async function authenticateMcpRequest(authorization: string | undefined):
     throw new McpAuthenticationError("Invalid MCP installation credential.", { cause: error });
   }
   const authData = await saleorApp.apl.get(identity.saleorApiUrl);
-  if (!authData || authData.appId !== identity.appId) {
+  if (
+    !authData ||
+    authData.appId !== identity.appId ||
+    !matchesInstallationFingerprint(authData.token, identity.installationFingerprint)
+  ) {
     throw new McpAuthenticationError("This Saleor app installation is no longer active.");
   }
   return authData;

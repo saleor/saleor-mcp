@@ -29,7 +29,7 @@ describe("connection details", () => {
       },
     });
     expect(JSON.stringify(details)).not.toContain(authData.token);
-    await expect(verifyInstallationCredential(details.credential)).resolves.toEqual({
+    await expect(verifyInstallationCredential(details.credential)).resolves.toMatchObject({
       appId: authData.appId,
       saleorApiUrl: authData.saleorApiUrl,
     });

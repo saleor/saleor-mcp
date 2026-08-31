@@ -1,3 +1,5 @@
+import { createHash, timingSafeEqual } from "node:crypto";
+
 import type { AuthData } from "@saleor/app-sdk/APL";
 import { importPKCS8, importSPKI, jwtVerify, SignJWT } from "jose";
 
@@ -5,6 +7,16 @@ const ISSUER = "saleor-mcp";
 const AUDIENCE = "saleor-mcp-client";
 
 export class InstallationCredentialConfigurationError extends Error {}
+
+function installationFingerprint(token: string): string {
+  return createHash("sha256").update(token).digest("base64url");
+}
+
+export function matchesInstallationFingerprint(token: string, fingerprint: string): boolean {
+  const current = Buffer.from(installationFingerprint(token));
+  const claimed = Buffer.from(fingerprint);
+  return current.length === claimed.length && timingSafeEqual(current, claimed);
+}
 
 function readKey(name: "MCP_CREDENTIAL_PRIVATE_KEY" | "MCP_CREDENTIAL_PUBLIC_KEY"): string {
   const key = process.env[name]?.replace(/\\n/g, "\n").trim();
@@ -41,7 +53,11 @@ async function verificationKey() {
 }
 
 export async function issueInstallationCredential(authData: AuthData): Promise<string> {
-  return new SignJWT({ saleorApiUrl: authData.saleorApiUrl, appId: authData.appId })
+  return new SignJWT({
+    saleorApiUrl: authData.saleorApiUrl,
+    appId: authData.appId,
+    installationFingerprint: installationFingerprint(authData.token),
+  })
     .setProtectedHeader({ alg: "RS512", typ: "JWT" })
     .setIssuer(ISSUER)
     .setAudience(AUDIENCE)
@@ -52,16 +68,24 @@ export async function issueInstallationCredential(authData: AuthData): Promise<s
 
 export async function verifyInstallationCredential(
   credential: string,
-): Promise<{ saleorApiUrl: string; appId: string }> {
+): Promise<{ saleorApiUrl: string; appId: string; installationFingerprint: string }> {
   const { payload } = await jwtVerify(credential, await verificationKey(), {
     issuer: ISSUER,
     audience: AUDIENCE,
     algorithms: ["RS512"],
   });
 
-  if (typeof payload.saleorApiUrl !== "string" || typeof payload.appId !== "string") {
+  if (
+    typeof payload.saleorApiUrl !== "string" ||
+    typeof payload.appId !== "string" ||
+    typeof payload.installationFingerprint !== "string"
+  ) {
     throw new Error("The installation credential is missing its installation identity.");
   }
 
-  return { saleorApiUrl: payload.saleorApiUrl, appId: payload.appId };
+  return {
+    saleorApiUrl: payload.saleorApiUrl,
+    appId: payload.appId,
+    installationFingerprint: payload.installationFingerprint,
+  };
 }

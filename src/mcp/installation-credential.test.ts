@@ -5,6 +5,7 @@ import { otherCredentialPublicKey, stubCredentialKeys } from "@/tests/credential
 
 import {
   issueInstallationCredential,
+  matchesInstallationFingerprint,
   verifyInstallationCredential,
 } from "./installation-credential";
 
@@ -18,10 +19,17 @@ describe("installation credentials", () => {
       saleorApiUrl: "https://shop.saleor.cloud/graphql/",
       token: "server-only-app-token",
     });
-    await expect(verifyInstallationCredential(credential)).resolves.toEqual({
+    const identity = await verifyInstallationCredential(credential);
+    expect(identity).toMatchObject({
       appId: "app-1",
       saleorApiUrl: "https://shop.saleor.cloud/graphql/",
     });
+    expect(
+      matchesInstallationFingerprint("server-only-app-token", identity.installationFingerprint),
+    ).toBe(true);
+    expect(
+      matchesInstallationFingerprint("replacement-token", identity.installationFingerprint),
+    ).toBe(false);
     expect(credential).not.toContain("server-only-app-token");
     expect(decodeProtectedHeader(credential).alg).toBe("RS512");
   });

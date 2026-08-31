@@ -113,7 +113,7 @@ export default function DashboardPanel() {
             </div>
             <p className="credential-note">
               Treat this configuration like a password. It identifies this app installation and
-              stops working after the app is uninstalled or reinstalled.
+              stops working when the installation is replaced or its app token changes.
             </p>
           </>
         ) : null}

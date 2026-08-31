@@ -26,10 +26,11 @@ The server also exposes the `saleor://schema/graphql` resource and the
    configuration containing a separate signed installation credential.
 4. Requests send that credential as `Authorization: Bearer <credential>` to `/mcp`.
 5. The server verifies the signature, loads the matching installation from the APL,
-   checks that its app ID still matches, and uses the server-side app token for Saleor.
+   checks that its app ID and token fingerprint still match, and uses the server-side app
+   token for Saleor.
 
-Uninstalling or reinstalling the app invalidates the old connection because the stored
-installation or app ID changes. Rotating the RSA key pair invalidates every issued MCP
+Uninstalling, reinstalling, or rotating the Saleor app token invalidates the old connection,
+even if a numeric app ID is reused. Rotating the RSA key pair invalidates every issued MCP
 connection for that deployment.
 
 ## Install in Saleor

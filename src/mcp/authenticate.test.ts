@@ -43,6 +43,23 @@ describe("MCP request authentication", () => {
     );
   });
 
+  it("rejects credentials from a replaced installation with a reused app ID", async () => {
+    const credential = await issueInstallationCredential({
+      appId: "reused-app-id",
+      saleorApiUrl: "https://shop.saleor.cloud/graphql/",
+      token: "old-installation-token",
+    });
+    vi.spyOn(saleorApp.apl, "get").mockResolvedValue({
+      appId: "reused-app-id",
+      saleorApiUrl: "https://shop.saleor.cloud/graphql/",
+      token: "new-installation-token",
+    });
+
+    await expect(authenticateMcpRequest(`Bearer ${credential}`)).rejects.toThrow(
+      "no longer active",
+    );
+  });
+
   it("rejects malformed bearer headers without regular-expression backtracking", async () => {
     await expect(authenticateMcpRequest("Basic credential")).rejects.toThrow(
       "Missing MCP installation credential",
