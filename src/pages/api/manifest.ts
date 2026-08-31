@@ -27,7 +27,7 @@ export default createManifestHandler({
     const iframeBaseUrl = process.env.APP_IFRAME_BASE_URL || appBaseUrl;
     const apiBaseUrl = process.env.APP_API_BASE_URL || appBaseUrl;
     const manifest: AppManifest = {
-      id: "com.saleor.mcp",
+      id: "app.saleor.mcp",
       version: packageJson.version,
       name: "Saleor MCP",
       author: "Saleor Commerce",
