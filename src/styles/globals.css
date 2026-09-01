@@ -1468,7 +1468,7 @@ html[data-theme="dark"] .client-copy-button {
 
 @media (min-width: 960px) {
   .settings-page-content {
-    grid-template-columns: minmax(224px, 1fr) minmax(0, 3fr);
+    grid-template-columns: minmax(224px, 1fr) minmax(0, 3fr) minmax(224px, 1fr);
     gap: 32px;
   }
 
