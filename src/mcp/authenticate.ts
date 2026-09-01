@@ -1,8 +1,9 @@
 import type { AuthData } from "@saleor/app-sdk/APL";
 
 import {
+  InactiveInstallationCredentialError,
   InstallationCredentialConfigurationError,
-  matchesInstallationFingerprint,
+  InvalidInstallationCredentialError,
   verifyInstallationCredential,
 } from "@/mcp/installation-credential";
 import { saleorApp } from "@/saleor-app";
@@ -30,20 +31,18 @@ export async function authenticateMcpRequest(authorization: string | undefined):
   const credential = bearerCredential(authorization);
   if (!credential) throw new McpAuthenticationError("Missing MCP installation credential.");
 
-  let identity;
   try {
-    identity = await verifyInstallationCredential(credential);
+    return await verifyInstallationCredential(credential, (saleorApiUrl) =>
+      saleorApp.apl.get(saleorApiUrl),
+    );
   } catch (error) {
     if (error instanceof InstallationCredentialConfigurationError) throw error;
-    throw new McpAuthenticationError("Invalid MCP installation credential.", { cause: error });
+    if (error instanceof InactiveInstallationCredentialError) {
+      throw new McpAuthenticationError(error.message, { cause: error });
+    }
+    if (error instanceof InvalidInstallationCredentialError) {
+      throw new McpAuthenticationError("Invalid MCP installation credential.", { cause: error });
+    }
+    throw error;
   }
-  const authData = await saleorApp.apl.get(identity.saleorApiUrl);
-  if (
-    !authData ||
-    authData.appId !== identity.appId ||
-    !matchesInstallationFingerprint(authData.token, identity.installationFingerprint)
-  ) {
-    throw new McpAuthenticationError("This Saleor app installation is no longer active.");
-  }
-  return authData;
 }

@@ -5,7 +5,6 @@ import { otherCredentialPublicKey, stubCredentialKeys } from "@/tests/credential
 
 import {
   issueInstallationCredential,
-  matchesInstallationFingerprint,
   verifyInstallationCredential,
 } from "./installation-credential";
 
@@ -14,22 +13,15 @@ describe("installation credentials", () => {
   afterEach(() => vi.unstubAllEnvs());
 
   it("round-trips only the installation identity", async () => {
-    const credential = await issueInstallationCredential({
+    const authData = {
       appId: "app-1",
       saleorApiUrl: "https://shop.saleor.cloud/graphql/",
       token: "server-only-app-token",
-    });
-    const identity = await verifyInstallationCredential(credential);
-    expect(identity).toMatchObject({
-      appId: "app-1",
-      saleorApiUrl: "https://shop.saleor.cloud/graphql/",
-    });
-    expect(
-      matchesInstallationFingerprint("server-only-app-token", identity.installationFingerprint),
-    ).toBe(true);
-    expect(
-      matchesInstallationFingerprint("replacement-token", identity.installationFingerprint),
-    ).toBe(false);
+    };
+    const credential = await issueInstallationCredential(authData);
+    await expect(verifyInstallationCredential(credential, async () => authData)).resolves.toEqual(
+      authData,
+    );
     expect(credential).not.toContain("server-only-app-token");
     expect(decodeProtectedHeader(credential).alg).toBe("RS512");
   });
@@ -41,7 +33,23 @@ describe("installation credentials", () => {
       token: "token",
     });
     vi.stubEnv("MCP_CREDENTIAL_PUBLIC_KEY", otherCredentialPublicKey);
-    await expect(verifyInstallationCredential(credential)).rejects.toThrow();
+    await expect(verifyInstallationCredential(credential, async () => undefined)).rejects.toThrow();
+  });
+
+  it("rejects credentials after the installation token changes", async () => {
+    const credential = await issueInstallationCredential({
+      appId: "app-1",
+      saleorApiUrl: "https://shop.saleor.cloud/graphql/",
+      token: "old-token",
+    });
+
+    await expect(
+      verifyInstallationCredential(credential, async () => ({
+        appId: "app-1",
+        saleorApiUrl: "https://shop.saleor.cloud/graphql/",
+        token: "replacement-token",
+      })),
+    ).rejects.toThrow("no longer active");
   });
 
   it("requires a valid RSA private key", async () => {

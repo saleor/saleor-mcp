@@ -29,10 +29,9 @@ describe("connection details", () => {
       },
     });
     expect(JSON.stringify(details)).not.toContain(authData.token);
-    await expect(verifyInstallationCredential(details.credential)).resolves.toMatchObject({
-      appId: authData.appId,
-      saleorApiUrl: authData.saleorApiUrl,
-    });
+    await expect(
+      verifyInstallationCredential(details.credential, async () => authData),
+    ).resolves.toEqual(authData);
   });
 
   it("uses the explicit API base URL when one is configured", async () => {
