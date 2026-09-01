@@ -7,7 +7,6 @@ import { permissionOptions } from "@/saleor-app/permissions";
 import {
   AppPageShell,
   AsideInfoCard,
-  CollapsibleSettingsSection,
   DashboardLoading,
   SettingsPageContent,
   SettingsSection,
@@ -18,7 +17,6 @@ const DOCUMENTATION_URL = "https://github.com/saleor/saleor-mcp";
 type Connection = {
   saleorApiUrl: string;
   mcpUrl: string;
-  mode: string;
   config: Record<string, unknown>;
 };
 
@@ -71,39 +69,48 @@ const ShieldIcon = () => (
   </svg>
 );
 
-function OnboardingStatus({
-  permissionsComplete = false,
-  onOpenPermissions,
-}: {
-  permissionsComplete?: boolean;
-  onOpenPermissions?: () => void;
-}) {
+const ChevronIcon = () => (
+  <svg aria-hidden="true" focusable="false" viewBox="0 0 16 16">
+    <path d="m4 6 4 4 4-4" />
+  </svg>
+);
+
+function PermissionModeField() {
+  return (
+    <div className="permission-mode-field">
+      <label htmlFor="mcp-permission-mode">Allowed actions</label>
+      <div className="permission-mode-select">
+        <select
+          id="mcp-permission-mode"
+          value="read_only"
+          disabled
+          aria-describedby="mcp-permission-mode-caption"
+        >
+          <option value="read_only">Read only</option>
+        </select>
+        <ChevronIcon />
+      </div>
+      <p id="mcp-permission-mode-caption">Saleor MCP is read-only at the moment.</p>
+    </div>
+  );
+}
+
+function OnboardingStatus() {
   return (
     <AsideInfoCard title="Onboarding status">
       <ol className="onboarding-steps">
-        <li
-          className={permissionsComplete ? "is-complete" : "is-active"}
-          aria-current={permissionsComplete ? undefined : "step"}
-        >
-          <button
-            type="button"
-            className="onboarding-step-content"
-            disabled={!permissionsComplete || !onOpenPermissions}
-            onClick={onOpenPermissions}
-          >
+        <li className="is-active" aria-current="step">
+          <span className="onboarding-step-content">
             <span className="onboarding-step-number" aria-hidden="true">
-              {permissionsComplete ? <CheckIcon /> : "1"}
+              1
             </span>
             <span>
-              <strong>Choose Saleor permissions</strong>
-              <p>Set the maximum Saleor access available to this installation.</p>
+              <strong>Choose MCP permissions</strong>
+              <p>Choose what the MCP can access.</p>
             </span>
-          </button>
+          </span>
         </li>
-        <li
-          className={permissionsComplete ? "is-active" : "is-disabled"}
-          aria-current={permissionsComplete ? "step" : undefined}
-        >
+        <li className="is-disabled">
           <span className="onboarding-step-content">
             <span className="onboarding-step-number" aria-hidden="true">
               2
@@ -119,28 +126,145 @@ function OnboardingStatus({
   );
 }
 
+function summarizeAccessAreas(labels: string[]) {
+  if (labels.length === 0) return undefined;
+  if (labels.length === 1) return labels[0];
+  if (labels.length === 2) return `${labels[0]} and ${labels[1]}`;
+
+  const visibleLabels = labels.length > 5 ? labels.slice(0, 4) : labels.slice(0, -1);
+  const finalLabel =
+    labels.length > 5 ? `${labels.length - visibleLabels.length} more` : labels.at(-1);
+
+  return `${visibleLabels.join(", ")}, and ${finalLabel}`;
+}
+
+function PermissionSummary({
+  selectedPermissions,
+  permissionsChanged,
+  requestingPermissions,
+  onReview,
+}: {
+  selectedPermissions: Set<AppPermission>;
+  permissionsChanged: boolean;
+  requestingPermissions: boolean;
+  onReview: () => void;
+}) {
+  const accessAreas = summarizeAccessAreas(
+    permissionOptions.filter(({ code }) => selectedPermissions.has(code)).map(({ label }) => label),
+  );
+
+  return (
+    <div className="permission-summary" aria-live="polite">
+      <ShieldIcon />
+      <div>
+        <strong>Permission summary</strong>
+        <p>
+          {accessAreas ? (
+            <>
+              Saleor MCP will authorize <b>reads</b> in <b>{accessAreas}</b>.
+            </>
+          ) : (
+            "Saleor MCP will not authorize access to any areas."
+          )}
+        </p>
+      </div>
+      <button
+        type="button"
+        className="app-button app-button-primary"
+        disabled={!permissionsChanged || selectedPermissions.size === 0 || requestingPermissions}
+        onClick={onReview}
+      >
+        {requestingPermissions ? "Opening Saleor…" : "Review changes"}
+      </button>
+    </div>
+  );
+}
+
+function ConfigurationSummary({
+  connection,
+  error,
+  permissionCount,
+}: {
+  connection?: Connection;
+  error?: string;
+  permissionCount: number;
+}) {
+  const status = connection ? "Ready" : error ? "Needs attention" : "Preparing";
+  const statusTone = connection ? "is-ready" : error ? "is-error" : "is-pending";
+  let environment: string | undefined;
+
+  if (connection) {
+    try {
+      environment = new URL(connection.saleorApiUrl).hostname;
+    } catch {
+      environment = connection.saleorApiUrl;
+    }
+  }
+
+  return (
+    <AsideInfoCard title="Configuration">
+      <dl className="aside-metadata">
+        <div>
+          <dt>Status</dt>
+          <dd className={`aside-status ${statusTone}`}>
+            <span aria-hidden="true" />
+            {status}
+          </dd>
+        </div>
+        <div>
+          <dt>Allowed actions</dt>
+          <dd>{connection ? "Read only" : "—"}</dd>
+        </div>
+        <div>
+          <dt>Access areas</dt>
+          <dd>{permissionCount} selected</dd>
+        </div>
+        <div>
+          <dt>Saleor environment</dt>
+          <dd title={connection?.saleorApiUrl}>{environment ?? "—"}</dd>
+        </div>
+      </dl>
+    </AsideInfoCard>
+  );
+}
+
 function PermissionControls({
   selectedPermissions,
+  permissionsChanged,
   requestingPermissions,
   error,
   onSelectAll,
   onClear,
   onTogglePermission,
   onRequestPermissions,
+  showAccessAreasTitle = false,
+  showDescription = true,
 }: {
   selectedPermissions: Set<AppPermission>;
+  permissionsChanged: boolean;
   requestingPermissions: boolean;
   error?: string;
   onSelectAll: () => void;
   onClear: () => void;
   onTogglePermission: (permission: AppPermission) => void;
   onRequestPermissions: () => void;
+  showAccessAreasTitle?: boolean;
+  showDescription?: boolean;
 }) {
   return (
     <>
       <div className="permission-toolbar">
-        <p>Select the Saleor permissions this MCP configuration needs.</p>
-        <div>
+        {showAccessAreasTitle || showDescription ? (
+          <div className="permission-toolbar-copy">
+            {showAccessAreasTitle ? (
+              <strong className="permission-subtitle">Access areas</strong>
+            ) : null}
+            {showDescription ? (
+              <p>Select the parts of Saleor the agent should be able to access.</p>
+            ) : null}
+          </div>
+        ) : null}
+        <div className="permission-toolbar-actions">
           <button type="button" className="app-button app-button-tertiary" onClick={onSelectAll}>
             Select all
           </button>
@@ -163,30 +287,28 @@ function PermissionControls({
                     checked={selectedPermissions.has(option.code)}
                     onChange={() => onTogglePermission(option.code)}
                   />
-                  <code className="permission-code">{option.code}</code>
+                  <span className="permission-copy">
+                    <strong>{option.label}</strong>
+                    <code className="permission-code">{option.code}</code>
+                  </span>
                 </label>
               ))}
           </fieldset>
         ))}
       </div>
 
+      <PermissionSummary
+        selectedPermissions={selectedPermissions}
+        permissionsChanged={permissionsChanged}
+        requestingPermissions={requestingPermissions}
+        onReview={onRequestPermissions}
+      />
+
       {error ? (
         <div className="inline-error" role="alert">
           {error}
         </div>
       ) : null}
-
-      <footer className="section-footer">
-        <p>Saleor shows the exact permission list for approval before anything changes.</p>
-        <button
-          type="button"
-          className="app-button app-button-primary"
-          disabled={selectedPermissions.size === 0 || requestingPermissions}
-          onClick={onRequestPermissions}
-        >
-          {requestingPermissions ? "Opening Saleor…" : "Review permissions in Saleor"}
-        </button>
-      </footer>
     </>
   );
 }
@@ -207,6 +329,15 @@ export default function DashboardPanel() {
     () => permissionSelection ?? new Set(appPermissions ?? []),
     [appPermissions, permissionSelection],
   );
+  const permissionsChanged = useMemo(() => {
+    if (!permissionSelection) return false;
+    const originalPermissions = new Set(appPermissions ?? []);
+
+    return (
+      permissionSelection.size !== originalPermissions.size ||
+      [...permissionSelection].some((permission) => !originalPermissions.has(permission))
+    );
+  }, [appPermissions, permissionSelection]);
 
   useEffect(() => {
     if (!appBridgeState?.ready || !canManageApps || needsPermissions) return;
@@ -268,7 +399,7 @@ export default function DashboardPanel() {
   };
 
   const requestPermissions = async () => {
-    if (!appBridge || selectedPermissions.size === 0) return;
+    if (!appBridge || !permissionsChanged || selectedPermissions.size === 0) return;
     setRequestingPermissions(true);
     setError(undefined);
     try {
@@ -319,16 +450,18 @@ export default function DashboardPanel() {
     return (
       <AppPageShell onOpenDocumentation={() => void openDocumentation()}>
         <SettingsPageContent
-          description="Choose the Saleor permissions available through this MCP configuration. You can request more later."
+          description="Choose what the MCP may do and which parts of Saleor it may access."
           aside={<OnboardingStatus />}
         >
           <SettingsSection
-            title="Saleor permissions"
-            description="These permissions are the ceiling for MCP access. A user's own Saleor permissions cannot increase it."
+            title="Permissions"
+            description="These permissions apply to every assistant using this MCP connection."
             headerEnd={<span className="count-badge">{selectedPermissions.size} selected</span>}
           >
+            <PermissionModeField />
             <PermissionControls
               selectedPermissions={selectedPermissions}
+              permissionsChanged={permissionsChanged}
               requestingPermissions={requestingPermissions}
               error={error}
               onSelectAll={() =>
@@ -337,6 +470,7 @@ export default function DashboardPanel() {
               onClear={() => setPermissionSelection(new Set())}
               onTogglePermission={togglePermission}
               onRequestPermissions={() => void requestPermissions()}
+              showAccessAreasTitle
             />
           </SettingsSection>
         </SettingsPageContent>
@@ -344,41 +478,59 @@ export default function DashboardPanel() {
     );
   }
 
-  const modeLabel = connection?.mode.replaceAll("_", " ") ?? "Loading";
-
   return (
-    <AppPageShell onOpenDocumentation={() => void openDocumentation()}>
+    <AppPageShell
+      description="Connect an AI assistant to this Saleor environment. The connection is tied to this app installation."
+      onOpenDocumentation={() => void openDocumentation()}
+    >
       <SettingsPageContent
-        description="Connect an AI assistant to this Saleor environment. The connection is tied to this app installation."
         aside={
-          <OnboardingStatus
-            permissionsComplete
-            onOpenPermissions={() => setPermissionsExpanded(true)}
+          <ConfigurationSummary
+            connection={connection}
+            error={error}
+            permissionCount={appPermissions?.length ?? 0}
           />
         }
       >
-        <CollapsibleSettingsSection
-          title="Saleor permissions"
-          count={`${appPermissions?.length ?? 0} granted`}
-          expanded={permissionsExpanded}
-          onToggle={() => setPermissionsExpanded((current) => !current)}
+        <SettingsSection
+          title="Permissions"
+          description="Control what connected assistants may do and which parts of Saleor they may access."
         >
-          <PermissionControls
-            selectedPermissions={selectedPermissions}
-            requestingPermissions={requestingPermissions}
-            error={permissionsExpanded ? error : undefined}
-            onSelectAll={() =>
-              setPermissionSelection(new Set(permissionOptions.map(({ code }) => code)))
-            }
-            onClear={() => setPermissionSelection(new Set())}
-            onTogglePermission={togglePermission}
-            onRequestPermissions={() => void requestPermissions()}
-          />
-        </CollapsibleSettingsSection>
+          {connection ? <PermissionModeField /> : null}
+          <button
+            type="button"
+            className="collapsible-settings-trigger permission-access-trigger"
+            aria-expanded={permissionsExpanded}
+            onClick={() => setPermissionsExpanded((current) => !current)}
+          >
+            <span className="permission-access-copy">
+              <strong>Access areas</strong>
+              <span>Select the parts of Saleor the agent should be able to access.</span>
+            </span>
+            <span className="collapsible-settings-meta">
+              <span className="count-badge">{appPermissions?.length ?? 0} selected</span>
+              <ChevronIcon />
+            </span>
+          </button>
+          {permissionsExpanded ? (
+            <PermissionControls
+              selectedPermissions={selectedPermissions}
+              permissionsChanged={permissionsChanged}
+              requestingPermissions={requestingPermissions}
+              error={error}
+              onSelectAll={() =>
+                setPermissionSelection(new Set(permissionOptions.map(({ code }) => code)))
+              }
+              onClear={() => setPermissionSelection(new Set())}
+              onTogglePermission={togglePermission}
+              onRequestPermissions={() => void requestPermissions()}
+              showDescription={false}
+            />
+          ) : null}
+        </SettingsSection>
         <SettingsSection
           title="MCP connection"
           description="Use this configuration in a client that supports Streamable HTTP."
-          headerEnd={<span className="mode-badge">{modeLabel}</span>}
         >
           {error ? (
             <div className="inline-error connection-error" role="alert">

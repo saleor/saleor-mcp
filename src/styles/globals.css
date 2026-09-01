@@ -18,6 +18,9 @@ body,
 #__next {
   min-height: 100%;
 }
+html {
+  scrollbar-gutter: stable;
+}
 html,
 body {
   margin: 0;
@@ -354,6 +357,18 @@ pre,
   line-height: 1.25;
 }
 
+.app-page-heading {
+  display: grid;
+  gap: 4px;
+}
+
+.app-page-heading p {
+  margin: 0;
+  color: var(--app-text-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
 .documentation-link {
   display: inline-flex;
   align-items: center;
@@ -449,6 +464,75 @@ pre,
   font-weight: 650;
 }
 
+.aside-metadata {
+  display: grid;
+  margin: 0;
+}
+
+.aside-metadata > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
+  align-items: baseline;
+  gap: 12px;
+  padding: 10px 0;
+}
+
+.aside-metadata > div:first-child {
+  padding-top: 0;
+}
+
+.aside-metadata > div:last-child {
+  padding-bottom: 0;
+}
+
+.aside-metadata > div + div {
+  border-top: 1px solid var(--app-border);
+}
+
+.aside-metadata dt,
+.aside-metadata dd {
+  min-width: 0;
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.aside-metadata dt {
+  color: var(--app-text-muted);
+  font-weight: 500;
+}
+
+.aside-metadata dd {
+  overflow: hidden;
+  font-weight: 600;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.aside-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.aside-status > span {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: var(--app-text-muted);
+}
+
+.aside-status.is-ready > span {
+  background: var(--app-success);
+}
+
+.aside-status.is-error > span {
+  background: var(--app-danger);
+}
+
 .onboarding-steps {
   display: grid;
   margin: 0;
@@ -463,8 +547,8 @@ pre,
 
 .onboarding-steps li:not(:last-child)::after {
   position: absolute;
-  top: 50%;
-  bottom: -50%;
+  top: 26px;
+  bottom: 0;
   left: 12px;
   width: 1px;
   background: var(--app-border-strong);
@@ -500,7 +584,7 @@ pre,
 .onboarding-step-content {
   display: grid;
   width: 100%;
-  align-items: center;
+  align-items: start;
   grid-template-columns: 26px minmax(0, 1fr);
   gap: 8px;
   padding: 0;
@@ -649,8 +733,7 @@ button.onboarding-step-content:not(:disabled):hover strong {
 }
 
 .ownership-chip,
-.count-badge,
-.mode-badge {
+.count-badge {
   display: inline-flex;
   min-height: 22px;
   align-items: center;
@@ -664,13 +747,6 @@ button.onboarding-step-content:not(:disabled):hover strong {
   font-weight: 600;
   line-height: 1.2;
   white-space: nowrap;
-}
-
-.mode-badge {
-  border-color: #a9d8cc;
-  background: var(--app-success-soft);
-  color: #00695c;
-  text-transform: capitalize;
 }
 
 .settings-section-body > * + * {
@@ -718,8 +794,7 @@ button.onboarding-step-content:not(:disabled):hover strong {
   opacity: 0.48;
 }
 
-.permission-toolbar,
-.section-footer {
+.permission-toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -727,16 +802,20 @@ button.onboarding-step-content:not(:disabled):hover strong {
   padding: 12px 24px;
 }
 
-.permission-toolbar p,
-.section-footer p {
+.permission-toolbar p {
   margin: 0;
   color: var(--app-text-muted);
   font-size: 12px;
 }
 
-.permission-toolbar > div {
+.permission-toolbar-actions {
   display: flex;
   gap: 4px;
+}
+
+.permission-toolbar-copy {
+  display: grid;
+  gap: 2px;
 }
 
 .permission-groups {
@@ -794,11 +873,152 @@ button.onboarding-step-content:not(:disabled):hover strong {
 }
 
 .permission-code {
-  align-self: center;
+  display: block;
+  margin-top: 2px;
   overflow-wrap: anywhere;
+  color: var(--app-text-muted);
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.permission-copy {
+  min-width: 0;
+}
+
+.permission-copy strong {
+  display: block;
   font-size: 13px;
   font-weight: 600;
   line-height: 1.35;
+}
+
+.permission-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 24px;
+  background: var(--app-surface-muted);
+}
+
+.permission-summary > div {
+  min-width: 0;
+  flex: 1 1 280px;
+}
+
+.permission-summary > svg {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: var(--app-text-muted);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+}
+
+.permission-summary strong {
+  display: block;
+  margin-bottom: 3px;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.permission-summary p {
+  margin: 0;
+  color: var(--app-text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.permission-summary b {
+  color: var(--app-text);
+  font-weight: 600;
+}
+
+.permission-summary > .app-button {
+  flex: 0 0 auto;
+  align-self: center;
+  margin-left: auto;
+}
+
+.permission-mode-field {
+  display: grid;
+  max-width: 420px;
+  gap: 6px;
+  padding: 20px 24px 22px;
+}
+
+.permission-mode-field label {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.permission-mode-select {
+  position: relative;
+}
+
+.permission-mode-select select {
+  width: 100%;
+  height: 40px;
+  appearance: none;
+  padding: 0 38px 0 12px;
+  border: 1px solid var(--app-border-strong);
+  border-radius: 6px;
+  background: var(--app-surface-muted);
+  color: var(--app-text-muted);
+  cursor: not-allowed;
+  font-size: 13px;
+  font-weight: 500;
+  opacity: 1;
+}
+
+.permission-mode-select svg {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: var(--app-text-muted);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.permission-mode-field p {
+  margin: 0;
+  color: var(--app-text-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.permission-access-trigger {
+  padding-block: 14px;
+}
+
+.permission-access-copy {
+  display: grid;
+  gap: 2px;
+}
+
+.permission-access-copy > strong,
+.permission-subtitle {
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.permission-access-copy > span,
+.permission-toolbar-copy > p {
+  color: var(--app-text-muted);
+  font-size: 12px;
+}
+
+.permission-toolbar-copy > p {
+  margin-top: 2px;
 }
 
 .inline-error {
@@ -1078,11 +1298,6 @@ html[data-theme="dark"] .app-button-primary {
   color: #151719;
 }
 
-html[data-theme="dark"] .mode-badge {
-  border-color: #29664f;
-  color: #73dbb3;
-}
-
 @media (max-width: 640px) {
   .landing-shell {
     padding-inline: 13px;
@@ -1099,8 +1314,7 @@ html[data-theme="dark"] .mode-badge {
     display: none;
   }
   .landing-footer,
-  .permission-toolbar,
-  .section-footer {
+  .permission-toolbar {
     flex-direction: column;
     align-items: stretch;
   }
@@ -1108,6 +1322,11 @@ html[data-theme="dark"] .mode-badge {
   .permission-toolbar > div,
   .connection-actions {
     justify-content: flex-end;
+  }
+
+  .permission-summary > .app-button {
+    width: calc(100% - 32px);
+    margin-left: 32px;
   }
 
   .settings-section-header > p {

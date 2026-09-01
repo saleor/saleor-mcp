@@ -14,15 +14,20 @@ const ChevronIcon = () => (
 
 export function AppPageShell({
   children,
+  description,
   onOpenDocumentation,
 }: {
   children: ReactNode;
+  description?: ReactNode;
   onOpenDocumentation?: () => void;
 }) {
   return (
     <main className="mcp-app">
       <header className="app-page-header">
-        <h1>Configuration</h1>
+        <div className="app-page-heading">
+          <h1>Configuration</h1>
+          {description ? <p>{description}</p> : null}
+        </div>
         <button
           className="documentation-link"
           disabled={!onOpenDocumentation}
@@ -43,14 +48,14 @@ export function SettingsPageContent({
   aside,
   children,
 }: {
-  description: ReactNode;
+  description?: ReactNode;
   aside?: ReactNode;
   children: ReactNode;
 }) {
   return (
     <div className="settings-page-content">
       <aside className="settings-aside">
-        <p className="settings-description">{description}</p>
+        {description ? <p className="settings-description">{description}</p> : null}
         {aside}
       </aside>
       <div className="settings-main">{children}</div>
