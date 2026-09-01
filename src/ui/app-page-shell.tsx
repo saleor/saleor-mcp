@@ -143,9 +143,8 @@ export function CollapsibleSettingsSection({
 
 export function DashboardLoading() {
   return (
-    <AppPageShell>
+    <AppPageShell description="Connect an AI assistant to this Saleor environment.">
       <SettingsPageContent
-        description="Connect an AI assistant to this Saleor environment. The connection is tied to this app installation."
         aside={
           <div className="aside-loading" aria-hidden="true">
             <span />

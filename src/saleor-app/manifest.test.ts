@@ -15,5 +15,8 @@ describe("app manifest", () => {
 
     expect(manifest.appUrl).toBe("https://iframe.example.com/dashboard");
     expect(manifest.tokenTargetUrl).toBe("https://api.example.com/api/register");
+    expect(manifest.brand?.logo.default).toBe(
+      "https://api.example.com/saleor-mcp-icon.png",
+    );
   });
 });

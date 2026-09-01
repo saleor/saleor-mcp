@@ -17,6 +17,11 @@ export function buildManifest(
     author: "Saleor Commerce",
     appUrl: `${iframeBaseUrl}/dashboard`,
     tokenTargetUrl: `${apiBaseUrl}/api/register`,
+    brand: {
+      logo: {
+        default: `${apiBaseUrl}/saleor-mcp-icon.png`,
+      },
+    },
     permissions: [],
     webhooks: [],
     extensions: [],

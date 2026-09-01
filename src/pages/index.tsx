@@ -1,4 +1,5 @@
 import Head from "next/head";
+import Image from "next/image";
 import type { GetServerSideProps } from "next";
 
 import packageJson from "../../package.json";
@@ -38,11 +39,14 @@ export const getServerSideProps: GetServerSideProps = async () => ({ props: {} }
 
 function Logo() {
   return (
-    <svg className="brand-mark" viewBox="0 0 42 42" aria-hidden="true">
-      <path d="M21 3 36.6 12v18L21 39 5.4 30V12L21 3Z" fill="#fff" />
-      <path d="m21 9.5 10 5.8v11.5l-10 5.7-10-5.7V15.3l10-5.8Z" fill="#101418" />
-      <path d="m21 15 5.2 3v6L21 27l-5.2-3v-6l5.2-3Z" fill="#25c18a" />
-    </svg>
+    <Image
+      className="brand-mark"
+      src="/saleor-mcp-icon.png"
+      alt=""
+      width={42}
+      height={42}
+      priority
+    />
   );
 }
 
@@ -55,7 +59,7 @@ export default function HomePage() {
           name="description"
           content="Connect Saleor Commerce to AI assistants through the Model Context Protocol."
         />
-        <link rel="icon" href="/favicon.svg" />
+        <link rel="icon" href="/saleor-mcp-icon.png" type="image/png" />
       </Head>
       <main className="landing-shell">
         <header className="hero">

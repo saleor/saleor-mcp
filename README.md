@@ -1,4 +1,8 @@
-# Saleor MCP Server
+<p align="center">
+  <img src="./public/saleor-mcp-icon.png" alt="Saleor MCP logo" width="128" height="128" />
+</p>
+
+<h1 align="center">Saleor MCP Server</h1>
 
 A hosted Model Context Protocol (MCP) server for Saleor Commerce, packaged as a
 multi-tenant Saleor App. It gives AI assistants four generic tools for discovering and

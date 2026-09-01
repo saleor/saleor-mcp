@@ -13,6 +13,7 @@ export default function DashboardPage() {
     <>
       <Head>
         <title>Saleor MCP configuration</title>
+        <link rel="icon" href="/saleor-mcp-icon.png" type="image/png" />
       </Head>
       <DashboardPanel />
     </>

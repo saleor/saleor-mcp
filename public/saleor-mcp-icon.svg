@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title>Saleor MCP</title>
+  <rect x="16" y="16" width="480" height="480" rx="104" fill="#f7f7f5" />
+  <circle cx="256" cy="198" r="140" fill="#161a1e" />
+  <path d="M160 228 212 171h140l-49 57H160Z" fill="#f7f7f5" />
+  <text
+    x="250"
+    y="438"
+    fill="#161a1e"
+    font-family="Arial, Helvetica, sans-serif"
+    font-size="86"
+    font-weight="700"
+    letter-spacing="7"
+    text-anchor="middle"
+  >MCP</text>
+</svg>
