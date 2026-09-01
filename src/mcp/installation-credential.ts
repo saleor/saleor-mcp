@@ -1,12 +1,15 @@
 import { createHash } from "node:crypto";
 
 import type { AuthData } from "@saleor/app-sdk/APL";
-import { importPKCS8, importSPKI, jwtVerify, SignJWT } from "jose";
+import { errors, importPKCS8, importSPKI, jwtVerify, SignJWT } from "jose";
 
 const ISSUER = "saleor-mcp";
 const AUDIENCE = "saleor-mcp-client";
+// Temporary lifetime for copied credentials until the app supports a production-grade OAuth flow.
+const INSTALLATION_CREDENTIAL_LIFETIME = "90d";
 
 export class InstallationCredentialConfigurationError extends Error {}
+export class ExpiredInstallationCredentialError extends Error {}
 export class InvalidInstallationCredentialError extends Error {}
 export class InactiveInstallationCredentialError extends Error {}
 
@@ -68,6 +71,7 @@ export async function issueInstallationCredential(authData: AuthData): Promise<s
     .setAudience(AUDIENCE)
     .setSubject(authData.appId)
     .setIssuedAt()
+    .setExpirationTime(INSTALLATION_CREDENTIAL_LIFETIME)
     .sign(await signingKey());
 }
 
@@ -84,6 +88,12 @@ export async function verifyInstallationCredential(
     }));
   } catch (error) {
     if (error instanceof InstallationCredentialConfigurationError) throw error;
+    if (error instanceof errors.JWTExpired) {
+      throw new ExpiredInstallationCredentialError(
+        "MCP installation credential expired. Open the Saleor MCP app in Dashboard and copy a new configuration.",
+        { cause: error },
+      );
+    }
     throw new InvalidInstallationCredentialError("Invalid MCP installation credential.", {
       cause: error,
     });

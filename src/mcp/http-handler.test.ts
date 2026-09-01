@@ -32,6 +32,7 @@ describe("MCP HTTP route", () => {
   beforeEach(stubCredentialKeys);
 
   afterEach(() => {
+    vi.useRealTimers();
     vi.restoreAllMocks();
     vi.unstubAllEnvs();
   });
@@ -54,6 +55,29 @@ describe("MCP HTTP route", () => {
     expect(invalid.statusCode()).toBe(401);
     expect(invalid.body()).toMatchObject({
       error: { message: "Invalid MCP installation credential." },
+    });
+  });
+
+  it("tells the client how to replace an expired installation credential", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-01-01T00:00:00Z"));
+    const authData = {
+      appId: "app-1",
+      saleorApiUrl: "https://shop.saleor.cloud/graphql/",
+      token: "server-token",
+    };
+    const credential = await issueInstallationCredential(authData);
+    vi.advanceTimersByTime(90 * 24 * 60 * 60 * 1_000 + 1_000);
+
+    const target = response();
+    await handler(request("POST", `Bearer ${credential}`), target.res);
+
+    expect(target.statusCode()).toBe(401);
+    expect(target.body()).toMatchObject({
+      error: {
+        message:
+          "MCP installation credential expired. Open the Saleor MCP app in Dashboard and copy a new configuration.",
+      },
     });
   });
 

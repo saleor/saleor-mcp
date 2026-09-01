@@ -1,6 +1,7 @@
 import type { AuthData } from "@saleor/app-sdk/APL";
 
 import {
+  ExpiredInstallationCredentialError,
   InactiveInstallationCredentialError,
   InstallationCredentialConfigurationError,
   InvalidInstallationCredentialError,
@@ -37,6 +38,9 @@ export async function authenticateMcpRequest(authorization: string | undefined):
     );
   } catch (error) {
     if (error instanceof InstallationCredentialConfigurationError) throw error;
+    if (error instanceof ExpiredInstallationCredentialError) {
+      throw new McpAuthenticationError(error.message, { cause: error });
+    }
     if (error instanceof InactiveInstallationCredentialError) {
       throw new McpAuthenticationError(error.message, { cause: error });
     }

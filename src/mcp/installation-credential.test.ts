@@ -1,16 +1,20 @@
-import { decodeProtectedHeader } from "jose";
+import { decodeJwt, decodeProtectedHeader } from "jose";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { otherCredentialPublicKey, stubCredentialKeys } from "@/tests/credential-keys";
 
 import {
+  ExpiredInstallationCredentialError,
   issueInstallationCredential,
   verifyInstallationCredential,
 } from "./installation-credential";
 
 describe("installation credentials", () => {
   beforeEach(stubCredentialKeys);
-  afterEach(() => vi.unstubAllEnvs());
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllEnvs();
+  });
 
   it("round-trips only the installation identity", async () => {
     const authData = {
@@ -24,6 +28,30 @@ describe("installation credentials", () => {
     );
     expect(credential).not.toContain("server-only-app-token");
     expect(decodeProtectedHeader(credential).alg).toBe("RS512");
+    const claims = decodeJwt(credential);
+    expect(claims.exp! - claims.iat!).toBe(90 * 24 * 60 * 60);
+  });
+
+  it("rejects credentials after 90 days with a clear renewal message", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-01-01T00:00:00Z"));
+    const authData = {
+      appId: "app-1",
+      saleorApiUrl: "https://shop.saleor.cloud/graphql/",
+      token: "server-only-app-token",
+    };
+    const credential = await issueInstallationCredential(authData);
+
+    vi.advanceTimersByTime(90 * 24 * 60 * 60 * 1_000 + 1_000);
+
+    await expect(
+      verifyInstallationCredential(credential, async () => authData),
+    ).rejects.toThrow(ExpiredInstallationCredentialError);
+    await expect(
+      verifyInstallationCredential(credential, async () => authData),
+    ).rejects.toThrow(
+      "MCP installation credential expired. Open the Saleor MCP app in Dashboard and copy a new configuration.",
+    );
   });
 
   it("rejects credentials signed by another deployment", async () => {
