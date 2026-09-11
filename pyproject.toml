@@ -42,8 +42,8 @@ exclude-newer = "3 weeks"
 [tool.uv.exclude-newer-package]
 # To customize on a per-package basis, for example you can do this:
 # django = "2026-04-07T14:30:00Z"
-starlette = "2026-06-12T09:24:00Z" # https://github.com/Kludex/starlette/security/advisories/GHSA-86qp-5c8j-p5mr
-mcp = "2026-06-26T12:58:00Z" # CVE-2026-59950, CVE-2026-52869, CVE-2026-52870
+cryptography = "2026-08-25T19:47:00Z"
+pyjwt = "2026-09-11T13:12:10Z"
 
 [tool.ariadne-codegen]
 schema_path = "./schema.graphql"
