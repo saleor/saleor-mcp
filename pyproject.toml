@@ -37,6 +37,9 @@ dev = [
 ]
 
 [tool.uv]
+# 0.13.5 fixes bundled `pip` version containing a compromised certificate
+# (https://github.com/astral-sh/uv/releases/tag/0.13.5)
+required-version = ">=0.13.5"
 exclude-newer = "3 weeks"
 
 [tool.uv.exclude-newer-package]
